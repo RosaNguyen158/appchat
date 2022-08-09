@@ -5,4 +5,5 @@ function sayHi(str) {
   console.log(`Say hi ${str}`);
 }
 
+// adjshbhj
 export { sum, sayHi };
