@@ -1,0 +1,56 @@
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <label for="message" class="h4" style="margin-top: 20px">Message:</label>
+    <ul
+      id="messages"
+      style="height: 600px; border: solid 1px #cecece; list-style: none"
+    ></ul>
+    <form>
+      <div class="form-group">
+        <textarea
+          id="m"
+          class="form-control"
+          rows="5"
+          placeholder="Enter your message"
+          required
+        ></textarea>
+      </div>
+      <button
+        type="submit"
+        id="form-submit"
+        class="btn btn-success btn-lg pull-right"
+      >
+        Submit
+      </button>
+    </form>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+      $(function () {
+        var socket = io();
+        $("form").submit(function () {
+          socket.emit("chat message", $("#m").val());
+          $("#m").val("");
+          return false;
+        });
+        socket.on("chat message", function (msg) {
+          $("#messages").append($("<li>").text(msg));
+        });
+      });
+    </script>
+  </body>
+</html>

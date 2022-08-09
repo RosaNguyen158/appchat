@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verify</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  </head>
+  <body>
+    Enter OTP <input type="text" id="otp" />
+    <button onclick="product()">submit</button>
+  </body>
+  <script>
+    function setCookie(cname, cvalue, exdays) {
+      const d = new Date();
+      d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
+      let expires = "expires=" + d.toUTCString();
+      document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+
+    // GET COOKIE
+    function getCookie(cname) {
+      let name = cname + "=";
+      let decodedCookie = decodeURIComponent(document.cookie);
+      let ca = decodedCookie.split(";");
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == " ") {
+          c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+          return c.substring(name.length, c.length);
+        }
+      }
+      return "";
+    }
+
+    function product() {
+      let username = sessionStorage.getItem("username");
+      let password = sessionStorage.getItem("password");
+      console.log("Session data", username, " ", password);
+      let verify = $("#otp").val();
+      $.ajax({
+        url: "/verify",
+        method: "POST",
+        data: JSON.stringify({
+          otp: verify,
+          username: username,
+          password: password,
+        }),
+        success: function (data) {
+          console.log(data);
+          console.log("Session data", username, " ", password);
+          setCookie("token", data.token, 1);
+          window.location.href = "/home";
+        },
+        contentType: "application/json",
+      });
+    }
+  </script>
+</html>
