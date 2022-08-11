@@ -1,4 +1,3 @@
-import { text } from "stream/consumers";
 import {
   Entity,
   Column,
@@ -6,12 +5,13 @@ import {
   PrimaryColumn,
   PrimaryGeneratedColumn,
   CreateDateColumn,
+  EntitySchema,
 } from "typeorm";
 
 @Entity({ name: "user" })
-export class User extends BaseEntity {
-  @PrimaryGeneratedColumn("identity")
-  id = "";
+export class User {
+  @PrimaryGeneratedColumn()
+  id = new Number();
 
   @Column("text")
   password = "";
@@ -23,13 +23,25 @@ export class User extends BaseEntity {
   email = "";
 
   @Column("text")
+  first_name = "";
+
+  @Column("text")
+  last_name = "";
+
+  @Column("text")
+  avartar_img = "";
+
+  @Column("text")
+  secret_key = "";
+
+  @Column("text")
   otp = "";
 
   @Column("timestamp with time zone")
-  created_at = "";
+  created_at = new Date();
 
   @Column("timestamp with time zone")
-  updated_at = "";
+  updated_at = new Date();
 }
 
 // module.exports = {

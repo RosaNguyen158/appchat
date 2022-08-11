@@ -4,57 +4,52 @@ import bycrypt from "bcrypt";
 import { body, validationResult } from "express-validator";
 import { sanitizeBody } from "express-validator";
 import * as OtpEmail from "../helpers/otpEmail";
-// import connectDB from "../ormconfig";
+import { AppDataSource } from "@/app.js";
 import { User } from "../entities/User";
+import { UserAccount } from "../entities/UserAccount";
+import { Friend } from "../entities/Friend";
 
 dotenv.config();
 
-export const register = (req, res, next) => {
-  // Validate fields.
-  body("firstName")
-    .isLength({ min: 1 })
-    .trim()
-    .withMessage("First name must be specified.")
-    .isAlphanumeric()
-    .withMessage("First name has non-alphanumeric characters.");
-  ("");
-  body("lastName")
-    .isLength({ min: 1 })
-    .trim()
-    .withMessage("Last name must be specified.")
-    .isAlphanumeric()
-    .withMessage("Last name has non-alphanumeric characters.");
-  body("email")
-    .isLength({ min: 1 })
-    .trim()
-    .withMessage("Email must be specified.")
-    .isEmail()
-    .withMessage("Email must be a valid email address.")
-    .custom((value) => {
-      return UserModel.findOne({ email: value }).then((user) => {
-        if (user) {
-          return Promise.reject("E-mail already in use");
-        }
-      });
-    });
-  body("password")
-    .isLength({ min: 6 })
-    .trim()
-    .withMessage("Password must be 6 characters or greater.");
-  // Sanitize fields.
-  sanitizeBody("firstName").escape();
-  sanitizeBody("lastName").escape();
-  sanitizeBody("email").escape();
-  sanitizeBody("password").escape();
-  // res.sendFile(path.join(__dirname, "login.html"));
-  // return res.render("login.html");
+export const register = async (req, res, next) => {
+  const user = new User();
+  user.password = 333;
+  user.username = "Hanna";
+  user.email = "hongnguyenarmy@gmail.com";
 
-  const user1 = User.create({
-    username: 'bobby',
-    password: 1,
-  })
-  
-  const savedPet = await User.save(user1)
+  const user_account = new UserAccount();
+  user_account.is_active = true;
+  user_account.user_id = user;
+  await AppDataSource.manager.save([user_account, user]);
+  console.log(user.id);
+  res.json({ message: "Successfully Saved." });
+};
+
+export const friend = async (req, res, next) => {
+  const user = new User();
+  user.password = 333;
+  user.username = "Hanna";
+  user.email = "hongnguyenarmy@gmail.com";
+
+  const user1 = new User();
+  user.password = 333;
+  user.username = "Hanna";
+  user.email = "hongnguyenarmy@gmail.com";
+
+  const user_account = new UserAccount();
+  user_account.is_active = true;
+  user_account.user_id = user;
+
+  const friend_account = new UserAccount();
+  user_account.is_active = true;
+  user_account.user_id = user1;
+
+  const friend = new Friend();
+  friend.user_id = 3;
+  friend.friend_id = user_account;
+  await AppDataSource.manager.save(friend);
+  console.log(friend.id);
+  res.json({ message: "Successfully Saved Friend." });
 };
 
 export const login = async (req, res, next) => {
@@ -62,7 +57,7 @@ export const login = async (req, res, next) => {
   let pass_word = req.body.password;
 
   console.log("username ", user_name, "pass ", pass_word);
-  let findUser = await User.findOne({
+  let findUser = await AppDataSource.getRepository(User).findOne({
     where: {
       username: user_name,
       password: pass_word,
@@ -90,7 +85,7 @@ export const verify = async (req, res, next) => {
     let pass_word = req.body.password;
     let otp = req.body.otp;
     console.log(otp);
-    let findUser = await User.findOne({
+    let findUser = await AppDataSource.getRepository(User).findOne({
       where: {
         username: user_name,
         password: pass_word,
