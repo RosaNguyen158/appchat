@@ -4,11 +4,14 @@
       "module-resolver",
       {
         "alias": {
-          "@": "./", //Dung '@' de tranh nham lan voi import thu vien
+          "@": "./",
           "underscore": "lodash"
         }
       }
-    ]
+    ],
+    "babel-plugin-transform-typescript-metadata",
+    ["@babel/plugin-proposal-decorators", { "legacy": true }],
+    ["@babel/plugin-proposal-class-properties", { "loose": true }]
   ],
-  "presets": ["es2015", "es2017"]
+  "presets": ["@babel/preset-env", "@babel/preset-typescript"]
 }

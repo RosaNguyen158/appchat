@@ -3,25 +3,26 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv"; // de su dung cac bien trong .env
 import path from "path";
 import authenToken from "@/middlewares/authenToken";
+
 const __dirname = path.resolve();
 
 dotenv.config();
-const UserList = [
-  {
-    id: 1,
-    username: "John",
-    password: 123,
-    email: "hongnguyenarmy@gmail.com",
-    age: 18,
-  },
-  {
-    id: 2,
-    username: "John",
-    email: "hongnguyenarmy@gmail.com",
-    password: 123,
-    age: 18,
-  },
-];
+// const UserList = [
+//   {
+//     id: 1,
+//     username: "John",
+//     password: 123,
+//     email: "hongnguyenarmy@gmail.com",
+//     age: 18,
+//   },
+//   {
+//     id: 2,
+//     username: "John",
+//     email: "hongnguyenarmy@gmail.com",
+//     password: 123,
+//     age: 18,
+//   },
+// ];
 
 // app.get("/app", authenToken, (req, res) => {
 //   res.json({ status: "Success!", data: User });
