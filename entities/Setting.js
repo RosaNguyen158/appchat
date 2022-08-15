@@ -4,10 +4,9 @@ import {
   BaseEntity,
   PrimaryGeneratedColumn,
   JoinColumn,
-  ManyToOne,
   OneToOne,
 } from "typeorm";
-import { UserAccount } from "./UserAccount";
+import { User } from "./User";
 
 @Entity({ name: "setting" })
 export class Setting extends BaseEntity {
@@ -26,9 +25,9 @@ export class Setting extends BaseEntity {
   @Column("text")
   link_in_fwd = "";
 
-  @OneToOne(() => UserAccount, (user_account) => user_account.setting)
+  @OneToOne(() => User, (user) => user.setting)
   @JoinColumn()
-  user_id = new UserAccount();
+  user_id = new User();
 
   @Column("timestamp with time zone")
   created_at = new Date();

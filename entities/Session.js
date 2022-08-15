@@ -6,34 +6,37 @@ import {
   JoinColumn,
   ManyToOne,
 } from "typeorm";
-import { UserAccount } from "./UserAccount";
+import { User } from "./User";
 
 @Entity({ name: "session" })
 export class Session extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @Column("text")
-  device_name = "";
+  @Column("text", { nullable: true })
+  device_name = null;
 
-  @Column("text")
-  app_version = "";
+  @Column("text", { nullable: true })
+  app_version = null;
 
-  @Column("text")
-  location = "";
+  @Column("text", { nullable: true })
+  location = null;
 
-  @Column("text")
-  ip_address = "";
+  @Column("text", { nullable: true })
+  ip_address = null;
 
   @Column("text")
   token = "";
 
+  @Column("text")
+  refresh_token = "";
+
   @Column("timestamp with time zone")
   last_active = new Date();
 
-  @ManyToOne(() => UserAccount, (user_account) => user_account.friend)
-  @JoinColumn()
-  user_id = new UserAccount();
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn("numberic", { nullable: true })
+  user_id = null;
 
   @Column("timestamp with time zone")
   created_at = new Date();

@@ -2,31 +2,29 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv"; // de su dung cac bien trong .env
 import path from "path";
-import authenToken from "@/middlewares/authenToken";
+import { AppDataSource } from "@/app.js";
+import { React } from "@/entities/React";
+import { User } from "../entities/User";
+import { Friend } from "../entities/Friend";
+import { RefreshToken } from "../middlewares/authenToken";
 
 const __dirname = path.resolve();
 
 dotenv.config();
-// const UserList = [
-//   {
-//     id: 1,
-//     username: "John",
-//     password: 123,
-//     email: "hongnguyenarmy@gmail.com",
-//     age: 18,
-//   },
-//   {
-//     id: 2,
-//     username: "John",
-//     email: "hongnguyenarmy@gmail.com",
-//     password: 123,
-//     age: 18,
-//   },
-// ];
 
-// app.get("/app", authenToken, (req, res) => {
-//   res.json({ status: "Success!", data: User });
-// });
+export const insertReact = RefreshToken; //middleware
+async (req, res, next) => {
+  try {
+    const icon = new React();
+    icon.name = "Angry";
+    await AppDataSource.manager.save(icon);
+    console.log(icon);
+    res.json({ message: "Successfully Saved." });
+  } catch (error) {
+    console.log(error);
+    res.json({ message: "Fail" });
+  }
+};
 
 export const home =
   ((req, res, next) => {
@@ -44,6 +42,15 @@ export const home =
   (req, res, next) => {
     res.sendFile(path.join(__dirname, "home.html"));
   });
+
+export const friend = async (req, res, next) => {
+  const friend = new Friend();
+  friend.user_id = req.body.user_id;
+  friend.friend_id = req.body.friend_id;
+  await AppDataSource.manager.save(friend);
+  console.log(friend);
+  res.json({ message: "Successfully Saved Friend." });
+};
 
 export const product =
   ((req, res, next) => {

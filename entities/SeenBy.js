@@ -8,28 +8,24 @@ import {
 } from "typeorm";
 import { User } from "./User";
 import { ChatRoom } from "./ChatRoom";
+import { Message } from "./Message";
 
-@Entity({ name: "member" })
-export class Member extends BaseEntity {
+@Entity({ name: "seenby" })
+export class SeenBy extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @Column("boolean", { default: false })
-  is_admin = "";
-
-  @Column("text")
-  app_version = "";
-
-  @Column("boolean", { default: false })
-  is_mute = "";
-
-  @ManyToOne(() => User, (user) => user.member)
-  @JoinColumn()
-  mem_id = new User();
-
-  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.member)
+  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.seenby)
   @JoinColumn()
   room_id = new ChatRoom();
+
+  @ManyToOne(() => Message, (message) => message.seenby)
+  @JoinColumn()
+  room_id = new Message();
+
+  @ManyToOne(() => User, (user) => user.seenby)
+  @JoinColumn()
+  mem_id = new User();
 
   @Column("timestamp with time zone")
   created_at = new Date();

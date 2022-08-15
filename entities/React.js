@@ -5,11 +5,11 @@ export class React extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @Column("text")
+  @Column("enum", { enum: ["Heart", "Like", "Sad"], default: "Heart" })
   name = "";
 
-  @Column("text")
-  message = "";
+  // @Column("simple-enum", { enum: ["A", "B", "C"] })
+  // simpleEnum: string
 
   @Column("timestamp with time zone")
   created_at = new Date();

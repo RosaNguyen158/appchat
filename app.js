@@ -3,10 +3,10 @@ import dotenv from "dotenv"; // de su dung cac bien trong .env
 import path from "path";
 import cookieParser from "cookie-parser";
 import apiRouter from "@/routes/apiRoutes";
+import session from "express-session";
 import { createConnection } from "typeorm";
 import { DataSource } from "typeorm";
 import { User } from "@/entities/User";
-import { UserAccount } from "@/entities/UserAccount";
 import { Friend } from "@/entities/Friend";
 import { Session } from "@/entities/Session";
 import { ChatRoom } from "@/entities/ChatRoom";
@@ -15,11 +15,22 @@ import { Member } from "@/entities/Member";
 import { React } from "@/entities/React";
 import { ReactMessage } from "@/entities/ReactMessage";
 import { Setting } from "@/entities/Setting";
+import { SeenBy } from "@/entities/SeenBy";
+
 const __dirname = path.resolve();
 
 dotenv.config();
 const app = express();
 const PORT = 3000;
+
+app.set("trust proxy", 1); // trust first proxy
+app.use(
+  session({
+    secret: "keyboard cat",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -30,7 +41,6 @@ export const AppDataSource = new DataSource({
   database: "appchat",
   entities: [
     User,
-    UserAccount,
     Friend,
     Session,
     ChatRoom,
@@ -39,6 +49,7 @@ export const AppDataSource = new DataSource({
     React,
     ReactMessage,
     Setting,
+    SeenBy,
   ],
   // entities: ["@/entities/*"],
   synchronize: true,
@@ -56,7 +67,7 @@ AppDataSource.initialize()
 
 app.use(express.json());
 app.use(cookieParser());
-app.use("/api/", apiRouter);
+app.use("/", apiRouter);
 app.use(express.static(path.join(__dirname, "public")));
 
 app.listen(PORT, () => {

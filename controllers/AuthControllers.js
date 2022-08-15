@@ -1,55 +1,67 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv"; // de su dung cac bien trong .env
 import bycrypt from "bcrypt";
+import session from "express-session";
+import { atob } from "atob";
+import { generateTokens } from "@/helpers/generateToken";
+import { updateRefreshToken } from "@/helpers/generateToken";
 import { body, validationResult } from "express-validator";
 import { sanitizeBody } from "express-validator";
 import * as OtpEmail from "../helpers/otpEmail";
 import { AppDataSource } from "@/app.js";
 import { User } from "../entities/User";
-import { UserAccount } from "../entities/UserAccount";
-import { Friend } from "../entities/Friend";
+import { Session } from "../entities/Session";
 
 dotenv.config();
 
 export const register = async (req, res, next) => {
+  body("username")
+    .isLength({ min: 1 })
+    .trim()
+    .withMessage("Username must be specified.")
+    .isAlphanumeric()
+    .withMessage("Username has non-alphanumeric characters.");
+  // body("lastName")
+  //     .isLength({ min: 1 })
+  //     .trim()
+  //     .withMessage("Last name must be specified.")
+  //     .isAlphanumeric()
+  //     .withMessage("Last name has non-alphanumeric characters."),
+  body("email")
+    .isLength({ min: 1 })
+    .trim()
+    .withMessage("Email must be specified.")
+    .isEmail()
+    .withMessage("Email must be a valid email address.")
+    .custom((value) => {
+      return AppDataSource.getRepository(User)
+        .findOne({
+          where: {
+            email: value,
+          },
+        })
+        .then((user) => {
+          if (user) {
+            return Promise.reject("E-mail already in use");
+          }
+        });
+    });
+  body("password")
+    .isLength({ min: 6 })
+    .trim()
+    .withMessage("Password must be 6 characters or greater.");
+  // Sanitize fields.
+  sanitizeBody("username").escape();
+  sanitizeBody("email").escape();
+  sanitizeBody("password").escape();
   const user = new User();
-  user.password = 333;
-  user.username = "Hanna";
-  user.email = "hongnguyenarmy@gmail.com";
+  user.password = req.body.password;
+  user.username = req.body.username;
+  user.email = req.body.email;
 
-  const user_account = new UserAccount();
-  user_account.is_active = true;
-  user_account.user_id = user;
-  await AppDataSource.manager.save([user_account, user]);
+  await AppDataSource.manager.save(user);
   console.log(user.id);
   res.json({ message: "Successfully Saved." });
-};
-
-export const friend = async (req, res, next) => {
-  const user = new User();
-  user.password = 333;
-  user.username = "Hanna";
-  user.email = "hongnguyenarmy@gmail.com";
-
-  const user1 = new User();
-  user.password = 333;
-  user.username = "Hanna";
-  user.email = "hongnguyenarmy@gmail.com";
-
-  const user_account = new UserAccount();
-  user_account.is_active = true;
-  user_account.user_id = user;
-
-  const friend_account = new UserAccount();
-  user_account.is_active = true;
-  user_account.user_id = user1;
-
-  const friend = new Friend();
-  friend.user_id = 3;
-  friend.friend_id = user_account;
-  await AppDataSource.manager.save(friend);
-  console.log(friend.id);
-  res.json({ message: "Successfully Saved Friend." });
 };
 
 export const login = async (req, res, next) => {
@@ -95,27 +107,52 @@ export const verify = async (req, res, next) => {
       res.json("FAIL");
     } else {
       let hashedOTP = `${findUser.otp}`;
-      console.log("findUser.otp", findUser.otp);
+      console.log(hashedOTP);
       const validOTP = await bycrypt.compare(`${otp}`, hashedOTP);
       if (!validOTP) {
         res.json("FAILED VERIFY OTP");
       } else {
-        findUser.verify = "true";
-        findUser.otp = "";
-        const accessToken = jwt.sign(
-          { user_name, pass_word },
-          process.env.ACCESS_TOKEN_SECRET
-        );
+        const user_id = findUser.id;
+        await AppDataSource.manager.save(findUser);
+        const tokens = generateTokens(findUser);
+
+        const user_session = new Session(); // Insert new Session
+        user_session.token = tokens.accessToken;
+        user_session.refresh_token = tokens.refreshToken;
+        user_session.user_id = user_id;
+        await AppDataSource.manager.save(user_session);
+        console.log("user_session", user_session);
+        // updateRefreshToken(user_session.id, tokens.refreshToken);
+        req.session.refreshToken = tokens.refreshToken;
+        req.session.token = tokens.accessToken;
+
+        const jwtPayload = JSON.parse(atob(tokens.accessToken.split(".")[1]));
+        console.log(jwtPayload);
+
+        console.log(req.session);
         res.json({
           message: "thanh cong",
-          token: accessToken,
+          token: tokens.accessToken,
         });
       }
     }
   } catch (error) {
+    console.log(error);
     res.json({
       status: "FAILED",
       message: error.message,
     });
   }
+};
+
+export const logout = async (req, res) => {
+  console.log("req.session.refreshToken", req.session.refreshToken);
+  let user_session = await AppDataSource.getRepository(Session).findOne({
+    where: {
+      refresh_token: req.session.refreshToken,
+    },
+  });
+  updateRefreshToken(user_session, null);
+  console.log("user_session logout", user_session);
+  res.json("Success Logout");
 };

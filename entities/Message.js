@@ -7,7 +7,6 @@ import {
   ManyToOne,
   OneToMany,
 } from "typeorm";
-import { UserAccount } from "./UserAccount";
 import { ChatRoom } from "./ChatRoom";
 import { User } from "./User";
 
@@ -16,11 +15,11 @@ export class Message extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @ManyToOne(() => UserAccount, (user_account) => user_account.friend)
+  @ManyToOne(() => User, (user) => user.message)
   @JoinColumn()
-  sender_id = new UserAccount();
+  sender_id = new User();
 
-  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.member)
+  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.message)
   @JoinColumn()
   room_id = new ChatRoom();
 
@@ -35,10 +34,6 @@ export class Message extends BaseEntity {
 
   @Column("int")
   forward_id = 0;
-
-  @OneToMany(() => UserAccount, (user_account) => user_account.message)
-  @Column("int")
-  seenby = new UserAccount();
 
   @Column("timestamp with time zone")
   created_at = new Date();

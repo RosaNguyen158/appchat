@@ -8,7 +8,7 @@ import {
 } from "typeorm";
 import { Message } from "./Message";
 import { React } from "./React";
-import { UserAccount } from "./UserAccount";
+import { User } from "./User";
 
 @Entity({ name: "react_message" })
 export class ReactMessage extends BaseEntity {
@@ -23,9 +23,9 @@ export class ReactMessage extends BaseEntity {
   @JoinColumn()
   room_id = new React();
 
-  @ManyToOne(() => UserAccount, (user_account) => user_account.react_message)
+  @ManyToOne(() => User, (user) => user.react_message)
   @JoinColumn()
-  room_id = new UserAccount();
+  room_id = new User();
 
   @Column("timestamp with time zone")
   created_at = new Date();
