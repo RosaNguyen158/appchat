@@ -1,16 +1,15 @@
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv"; // de su dung cac bien trong .env
 import bycrypt from "bcrypt";
-import session from "express-session";
-import { atob } from "atob";
 import { generateTokens } from "@/helpers/generateToken";
-import { updateRefreshToken } from "@/helpers/generateToken";
 import { body, validationResult } from "express-validator";
 import { sanitizeBody } from "express-validator";
 import * as OtpEmail from "../helpers/otpEmail";
 import { AppDataSource } from "@/app.js";
 import { User } from "../entities/User";
 import { Session } from "../entities/Session";
+import geoip from "geoip-lite";
+import MobileDetect from "mobile-detect";
+import UAParser from "ua-parser-js";
 
 dotenv.config();
 
@@ -21,12 +20,6 @@ export const register = async (req, res, next) => {
     .withMessage("Username must be specified.")
     .isAlphanumeric()
     .withMessage("Username has non-alphanumeric characters.");
-  // body("lastName")
-  //     .isLength({ min: 1 })
-  //     .trim()
-  //     .withMessage("Last name must be specified.")
-  //     .isAlphanumeric()
-  //     .withMessage("Last name has non-alphanumeric characters."),
   body("email")
     .isLength({ min: 1 })
     .trim()
@@ -67,7 +60,6 @@ export const register = async (req, res, next) => {
 export const login = async (req, res, next) => {
   let user_name = req.body.username;
   let pass_word = req.body.password;
-
   console.log("username ", user_name, "pass ", pass_word);
   let findUser = await AppDataSource.getRepository(User).findOne({
     where: {
@@ -76,7 +68,6 @@ export const login = async (req, res, next) => {
     },
   });
   console.log("findUser ", findUser);
-
   if (!findUser) {
     res.json("Fail");
   } else {
@@ -106,7 +97,7 @@ export const verify = async (req, res, next) => {
     if (!otp) {
       res.json("FAIL");
     } else {
-      let hashedOTP = `${findUser.otp}`;
+      let hashedOTP = findUser.otp;
       console.log(hashedOTP);
       const validOTP = await bycrypt.compare(`${otp}`, hashedOTP);
       if (!validOTP) {
@@ -115,22 +106,24 @@ export const verify = async (req, res, next) => {
         const user_id = findUser.id;
         await AppDataSource.manager.save(findUser);
         const tokens = generateTokens(findUser);
-
         const user_session = new Session(); // Insert new Session
         user_session.token = tokens.accessToken;
         user_session.refresh_token = tokens.refreshToken;
         user_session.user_id = user_id;
+        user_session.agent_info = req.headers["user-agent"];
+        const geo = geoip.lookup("222.253.42.176");
+        user_session.location = geo.country;
+        user_session.ip_address = req.ip;
+        const agent_info = UAParser(
+          "Mozilla/5.0 (iPad; CPU OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/87.0.4280.77 Mobile/15E148 Safari/604.1"
+        );
+        user_session.agent_os = agent_info.os.name;
+        user_session.agent_browser = agent_info.browser.name;
+        user_session.device_name = agent_info.device.vendor;
         await AppDataSource.manager.save(user_session);
-        console.log("user_session", user_session);
-        // updateRefreshToken(user_session.id, tokens.refreshToken);
-        req.session.refreshToken = tokens.refreshToken;
-        req.session.token = tokens.accessToken;
-
-        const jwtPayload = JSON.parse(atob(tokens.accessToken.split(".")[1]));
-        console.log(jwtPayload);
-
-        console.log(req.session);
-        res.json({
+        console.log(JSON.stringify(device_info, null, "  "));
+        console.log("tokens", tokens);
+        return res.json({
           message: "thanh cong",
           token: tokens.accessToken,
         });
@@ -138,7 +131,7 @@ export const verify = async (req, res, next) => {
     }
   } catch (error) {
     console.log(error);
-    res.json({
+    return res.json({
       status: "FAILED",
       message: error.message,
     });
@@ -146,13 +139,16 @@ export const verify = async (req, res, next) => {
 };
 
 export const logout = async (req, res) => {
-  console.log("req.session.refreshToken", req.session.refreshToken);
+  const authorizationHeader = req.headers["authorization"];
+  const token = authorizationHeader; // token
+  console.log("authorizationHeader", authorizationHeader);
   let user_session = await AppDataSource.getRepository(Session).findOne({
     where: {
-      refresh_token: req.session.refreshToken,
+      token: token,
     },
   });
-  updateRefreshToken(user_session, null);
+  user_session.refresh_token = null;
+  await AppDataSource.manager.save(user_session);
   console.log("user_session logout", user_session);
   res.json("Success Logout");
 };

@@ -6,4 +6,6 @@ var app = express();
 app.use("/auth/", authRouter);
 app.use("/home/", homeRouter);
 
+// GET POST PUT DELETE OPTION
+
 export default app;

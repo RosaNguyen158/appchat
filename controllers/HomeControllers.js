@@ -48,8 +48,7 @@ export const friend = async (req, res, next) => {
   friend.user_id = req.body.user_id;
   friend.friend_id = req.body.friend_id;
   await AppDataSource.manager.save(friend);
-  console.log(friend);
-  res.json({ message: "Successfully Saved Friend." });
+  res.status(200);
 };
 
 export const product =

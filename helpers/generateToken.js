@@ -17,16 +17,5 @@ export const generateTokens = (payload) => {
   const refreshToken = jwt.sign({ id, username }, refresh_secret_key, {
     expiresIn: "1h",
   });
-
   return { accessToken, refreshToken };
 };
-
-// export const updateRefreshToken = async (id, refreshToken) => {
-//   let user_session = await AppDataSource.getRepository(Session).findOne({
-//     where: {
-//       id: id,
-//     },
-//   });
-//   user_session.refresh_token = refreshToken;
-//   await AppDataSource.manager.save(user_session);
-// };

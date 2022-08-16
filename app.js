@@ -3,7 +3,6 @@ import dotenv from "dotenv"; // de su dung cac bien trong .env
 import path from "path";
 import cookieParser from "cookie-parser";
 import apiRouter from "@/routes/apiRoutes";
-import session from "express-session";
 import { createConnection } from "typeorm";
 import { DataSource } from "typeorm";
 import { User } from "@/entities/User";
@@ -24,21 +23,21 @@ const app = express();
 const PORT = 3000;
 
 app.set("trust proxy", 1); // trust first proxy
-app.use(
-  session({
-    secret: "keyboard cat",
-    resave: false,
-    saveUninitialized: false,
-  })
-);
+// app.use(
+//   session({
+//     secret: "keyboard cat",
+//     resave: false,
+//     saveUninitialized: false,
+//   })
+// );
 
 export const AppDataSource = new DataSource({
-  type: "postgres",
-  host: "localhost",
-  port: 5432,
-  username: "postgres",
-  password: 123,
-  database: "appchat",
+  type: process.env.TYPE_DBA,
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   entities: [
     User,
     Friend,
