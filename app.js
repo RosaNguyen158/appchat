@@ -15,6 +15,9 @@ import { React } from "@/entities/React";
 import { ReactMessage } from "@/entities/ReactMessage";
 import { Setting } from "@/entities/Setting";
 import { SeenBy } from "@/entities/SeenBy";
+import { Server } from "socket.io";
+import http from "http";
+import client from "@/services/client";
 
 const __dirname = path.resolve();
 
@@ -22,7 +25,7 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
-app.set("trust proxy", 1); // trust first proxy
+// app.set("trust proxy", 1); // trust first proxy
 // app.use(
 //   session({
 //     secret: "keyboard cat",
@@ -31,43 +34,50 @@ app.set("trust proxy", 1); // trust first proxy
 //   })
 // );
 
-export const AppDataSource = new DataSource({
-  type: process.env.TYPE_DBA,
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  entities: [
-    User,
-    Friend,
-    Session,
-    ChatRoom,
-    Message,
-    Member,
-    React,
-    ReactMessage,
-    Setting,
-    SeenBy,
-  ],
-  // entities: ["@/entities/*"],
-  synchronize: true,
-  logging: false,
+const server = http.createServer(app);
+const io = new Server(server);
+io.on("connection", function (socket) {
+  console.log("a user connected");
 });
+// export const AppDataSource = new DataSource({
+//   type: process.env.TYPE_DBA,
+//   host: process.env.DB_HOST,
+//   port: process.env.DB_PORT,
+//   username: process.env.DB_USERNAME,
+//   password: process.env.DB_PASSWORD,
+//   database: process.env.DB_NAME,
+//   entities: [
+//     User,
+//     Friend,
+//     Session,
+//     ChatRoom,
+//     Message,
+//     Member,
+//     React,
+//     ReactMessage,
+//     Setting,
+//     SeenBy,
+//   ],
+//   // entities: ["@/entities/*"],
+//   synchronize: true,
+//   logging: false,
+// });
 
 // to initialize initial connection with the database, register all entities
 // and "synchronize" database schema, call "initialize()" method of a newly created database
 // once in your application bootstrap
-AppDataSource.initialize()
-  .then(() => {
-    console.log("Connected to PostgreSQL");
-  })
-  .catch((error) => console.log(error));
+// AppDataSource.initialize()
+//   .then(() => {
+//     console.log("Connected to PostgreSQL");
+//   })
+//   .catch((error) => console.log(error));
 
-app.use(express.json());
-app.use(cookieParser());
-app.use("/", apiRouter);
-app.use(express.static(path.join(__dirname, "public")));
+// app.use(express.json());
+// app.use(cookieParser());
+// app.use("/", apiRouter);
+// io.use("/chat", client);
+
+// app.use(express.static(path.join(__dirname, "public")));
 
 app.listen(PORT, () => {
   console.log(`Server is running on PORT ${PORT}`);

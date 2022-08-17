@@ -23,16 +23,16 @@ export class Message extends BaseEntity {
   @JoinColumn()
   room_id = new ChatRoom();
 
-  @Column("text")
+  @Column("text", { nullable: true })
   status = "";
 
   @Column("text")
   message = "";
 
-  @Column("int")
+  @Column("int", { nullable: true })
   reply_id = 0;
 
-  @Column("int")
+  @Column("int", { nullable: true })
   forward_id = 0;
 
   @Column("timestamp with time zone")

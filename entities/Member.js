@@ -17,9 +17,6 @@ export class Member extends BaseEntity {
   @Column("boolean", { default: false })
   is_admin = "";
 
-  @Column("text")
-  app_version = "";
-
   @Column("boolean", { default: false })
   is_mute = "";
 

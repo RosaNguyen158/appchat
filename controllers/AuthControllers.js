@@ -1,52 +1,16 @@
 import dotenv from "dotenv"; // de su dung cac bien trong .env
 import bycrypt from "bcrypt";
 import { generateTokens } from "@/helpers/generateToken";
-import { body, validationResult } from "express-validator";
-import { sanitizeBody } from "express-validator";
 import * as OtpEmail from "../helpers/otpEmail";
 import { AppDataSource } from "@/app.js";
 import { User } from "../entities/User";
 import { Session } from "../entities/Session";
 import geoip from "geoip-lite";
-import MobileDetect from "mobile-detect";
 import UAParser from "ua-parser-js";
 
 dotenv.config();
 
 export const register = async (req, res, next) => {
-  body("username")
-    .isLength({ min: 1 })
-    .trim()
-    .withMessage("Username must be specified.")
-    .isAlphanumeric()
-    .withMessage("Username has non-alphanumeric characters.");
-  body("email")
-    .isLength({ min: 1 })
-    .trim()
-    .withMessage("Email must be specified.")
-    .isEmail()
-    .withMessage("Email must be a valid email address.")
-    .custom((value) => {
-      return AppDataSource.getRepository(User)
-        .findOne({
-          where: {
-            email: value,
-          },
-        })
-        .then((user) => {
-          if (user) {
-            return Promise.reject("E-mail already in use");
-          }
-        });
-    });
-  body("password")
-    .isLength({ min: 6 })
-    .trim()
-    .withMessage("Password must be 6 characters or greater.");
-  // Sanitize fields.
-  sanitizeBody("username").escape();
-  sanitizeBody("email").escape();
-  sanitizeBody("password").escape();
   const user = new User();
   user.password = req.body.password;
   user.username = req.body.username;
@@ -76,10 +40,6 @@ export const login = async (req, res, next) => {
       status: "Sending",
     });
   }
-};
-
-export const enterOtp = (req, res, next) => {
-  return res.render("verify.html");
 };
 
 export const verify = async (req, res, next) => {
