@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import session from "express-session";
 import dotenv from "dotenv"; // de su dung cac bien trong .env
 import { Session } from "../entities/Session";
 import { AppDataSource } from "@/app.js";

@@ -15,21 +15,22 @@ import { React } from "@/entities/React";
 import { ReactMessage } from "@/entities/ReactMessage";
 import { Setting } from "@/entities/Setting";
 import { SeenBy } from "@/entities/SeenBy";
+import * as chatSocket from "@/services/server";
+import ChatController from "@/controllers/ChatControllers";
+import socket from "./services/client";
+
+export const http = require("http");
+// import server from "@/services/server";
+
+const app = express();
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
 
 const __dirname = path.resolve();
 
 dotenv.config();
-const app = express();
 const PORT = 3000;
-
-app.set("trust proxy", 1); // trust first proxy
-// app.use(
-//   session({
-//     secret: "keyboard cat",
-//     resave: false,
-//     saveUninitialized: false,
-//   })
-// );
 
 export const AppDataSource = new DataSource({
   type: process.env.TYPE_DBA,
@@ -55,9 +56,6 @@ export const AppDataSource = new DataSource({
   logging: false,
 });
 
-// to initialize initial connection with the database, register all entities
-// and "synchronize" database schema, call "initialize()" method of a newly created database
-// once in your application bootstrap
 AppDataSource.initialize()
   .then(() => {
     console.log("Connected to PostgreSQL");
@@ -66,9 +64,36 @@ AppDataSource.initialize()
 
 app.use(express.json());
 app.use(cookieParser());
-app.use("/", apiRouter);
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/", apiRouter);
 
-app.listen(PORT, () => {
+io.of("/direct-room").on("connection", (socket) => {
+  chatSocket.directRoom(io, socket);
+});
+io.of("/creat-new-room").on("connection", (socket) => {
+  chatSocket.createRoom(io, socket);
+});
+io.of("/join-room-by-code").on("connection", (socket) => {
+  chatSocket.JoinByCode(io, socket);
+});
+io.of("/join-room").on("connection", (socket) => {
+  if (socket.handshake.query.room) chatSocket.joinRoom(io, socket);
+  if (socket.handshake.query.code_roomchat) chatSocket.JoinByCode(io, socket);
+});
+
+// const onConnection = (socket) => {
+//   chatSocket.chatMessage(io, socket);
+// };
+// io.on("connection", onConnection);
+
+// io.use((socket, next) => {
+//   console.log(socket.handshake.headers.id);
+//   const userId = socket.handshake.headers;
+//   const findUser = ChatController.findUser(userId);
+//   if (findUser) next();
+//   console.log("findUser", findUser);
+// });
+
+server.listen(PORT, () => {
   console.log(`Server is running on PORT ${PORT}`);
 });

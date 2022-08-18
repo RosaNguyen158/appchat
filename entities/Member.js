@@ -15,21 +15,22 @@ export class Member extends BaseEntity {
   id = new Number();
 
   @Column("boolean", { default: false })
-  is_admin = "";
-
-  @Column("text")
-  app_version = "";
+  is_admin = false;
 
   @Column("boolean", { default: false })
-  is_mute = "";
+  is_mute = false;
 
-  @ManyToOne(() => User, (user) => user.member)
-  @JoinColumn()
-  mem_id = new User();
+  // @ManyToOne(() => User, (user) => user.member)
+  // @JoinColumn()
+  // mem_id = new User();
 
-  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.member)
-  @JoinColumn()
-  room_id = new ChatRoom();
+  @ManyToOne(() => User, (user) => user.id)
+  @Column("int", { nullable: true })
+  user_id = null;
+
+  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.id)
+  @Column("int", { nullable: true })
+  room_id = null;
 
   @Column("timestamp with time zone")
   created_at = new Date();

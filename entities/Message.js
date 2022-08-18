@@ -15,24 +15,32 @@ export class Message extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @ManyToOne(() => User, (user) => user.message)
-  @JoinColumn()
-  sender_id = new User();
+  // @ManyToOne(() => User, (user) => user.message)
+  // @JoinColumn()
+  // sender_id = new User();
 
-  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.message)
-  @JoinColumn()
-  room_id = new ChatRoom();
+  @ManyToOne(() => User, (user) => user.id)
+  @Column("int", { nullable: true })
+  sender_id = null;
 
-  @Column("text")
+  // @ManyToOne(() => ChatRoom, (chatroom) => chatroom.message)
+  // @JoinColumn()
+  // room_id = new ChatRoom();
+
+  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.id)
+  @Column("int", { nullable: true })
+  room_id = null;
+
+  @Column("text", { nullable: true })
   status = "";
 
   @Column("text")
   message = "";
 
-  @Column("int")
+  @Column("int", { nullable: true })
   reply_id = 0;
 
-  @Column("int")
+  @Column("int", { nullable: true })
   forward_id = 0;
 
   @Column("timestamp with time zone")
