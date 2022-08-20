@@ -3,7 +3,7 @@ import { ChatRoom } from "@/entities/ChatRoom";
 import { Member } from "@/entities/Member";
 import { Message } from "@/entities/Message";
 import { User } from "@/entities/User";
-import { Session } from "inspector";
+import { Session } from "@/entities/Session";
 
 export const joinRoom = async (userid, room) => {
   const mem = new Member();
@@ -126,12 +126,12 @@ export const updateMute = async (userId) => {
   return updateMember;
 };
 
-export const updateActive = async (userId, timeDisconnect) => {
-  console.log("Update Session", userId);
+export const updateActive = async (userId) => {
   const updateSession = await AppDataSource.getRepository(Session).findOne({
     where: {
       user_id: userId,
     },
   });
+  updateSession.last_active = new Date();
   return updateSession;
 };

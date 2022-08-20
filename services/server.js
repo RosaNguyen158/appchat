@@ -172,11 +172,7 @@ export const disconnectUser = async (io, socket, userSocker) => {
   console.log(userSocker++);
   const user = await ChatController.findUser(socket.handshake.headers.id);
   socket.on("disconnect", async () => {
-    const timeDisconnect = Date.now();
-    const updateSession = await ChatController.updateActive(
-      user.id,
-      timeDisconnect
-    );
+    const updateSession = await ChatController.updateActive(user.id);
     console.log("updateSession", updateSession);
     socket.broadcast.emit(
       "userDisconnect",
