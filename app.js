@@ -16,8 +16,6 @@ import { ReactMessage } from "@/entities/ReactMessage";
 import { Setting } from "@/entities/Setting";
 import { SeenBy } from "@/entities/SeenBy";
 import * as chatSocket from "@/services/server";
-import ChatController from "@/controllers/ChatControllers";
-import socket from "./services/client";
 
 export const http = require("http");
 // import server from "@/services/server";
@@ -66,11 +64,13 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/", apiRouter);
+let userSocket = 0;
 
 io.of("/direct-room").on("connection", (socket) => {
-  chatSocket.directRoom(io, socket);
+  chatSocket.directRoom(io, socket, userSocket);
+  chatSocket.disconnectUser(io, socket, userSocket);
 });
-io.of("/creat-new-room").on("connection", (socket) => {
+io.of("/create-new-room").on("connection", (socket) => {
   chatSocket.createRoom(io, socket);
 });
 io.of("/join-room-by-code").on("connection", (socket) => {

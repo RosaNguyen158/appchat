@@ -4,26 +4,60 @@ import dotenv from "dotenv"; // de su dung cac bien trong .env
 import path from "path";
 import { AppDataSource } from "@/app.js";
 import { React } from "@/entities/React";
-import { User } from "../entities/User";
-import { Friend } from "../entities/Friend";
-import { RefreshToken } from "../middlewares/authenToken";
-
+import { User } from "@/entities/User";
+import { Friend } from "@/entities/Friend";
+import { Session } from "@/entities/Session";
 const __dirname = path.resolve();
 
 dotenv.config();
 
-export const insertReact = RefreshToken; //middleware
-async (req, res, next) => {
-  try {
-    const icon = new React();
-    icon.name = "Angry";
-    await AppDataSource.manager.save(icon);
-    console.log(icon);
-    res.json({ message: "Successfully Saved." });
-  } catch (error) {
-    console.log(error);
-    res.json({ message: "Fail" });
-  }
+export const insertReact = //middleware
+  async (req, res, next) => {
+    try {
+      const icon = new React();
+      icon.name = "Angry";
+      await AppDataSource.manager.save(icon);
+      console.log(icon);
+      res.json({ message: "Successfully Saved." });
+    } catch (error) {
+      console.log(error);
+      res.json({ message: "Fail" });
+    }
+  };
+
+export const updateContact = async (req, res, next) => {
+  const firstNameChange = req.query.firstname;
+  const lastNameChange = req.query.lastname;
+  const authorizationHeader = req.headers["authorization"];
+  const token = authorizationHeader; // token
+  let user_session = await AppDataSource.getRepository(Session).findOne({
+    where: {
+      token: token,
+    },
+  });
+  const updateSession = await AppDataSource.getRepository(User).findOne({
+    where: {
+      first_name: firstNameChange,
+      last_name: lastNameChange,
+      id: user_session.id,
+    },
+  });
+  return res.json({
+    message: "Updated Success!",
+  });
+};
+
+export const searchContact = async (req, res, next) => {
+  const findByKey = req.query.findByKey;
+  let findUser = await AppDataSource.getRepository(User).findOne({
+    where: {
+      username: findByKey,
+    },
+  });
+  return res.json({
+    result: findUser,
+    message: "Updated Success!",
+  });
 };
 
 export const home =

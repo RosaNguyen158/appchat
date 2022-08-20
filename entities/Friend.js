@@ -14,11 +14,13 @@ export class Friend extends BaseEntity {
   id = new Number();
 
   @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn()
+  @JoinColumn({ name: "user_id" })
+  @Column("text")
   user_id = "";
 
   @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn()
+  @JoinColumn({ name: "friend_id" })
+  @Column("text")
   friend_id = "";
 
   @Column("text")

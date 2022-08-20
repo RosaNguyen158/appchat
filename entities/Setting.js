@@ -25,8 +25,9 @@ export class Setting extends BaseEntity {
   @Column("text")
   link_in_fwd = "";
 
-  @OneToOne(() => User, (user) => user.setting)
-  @JoinColumn()
+  @OneToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: "user_id" })
+  @Column("text")
   user_id = new User();
 
   @Column("timestamp with time zone")

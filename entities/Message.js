@@ -15,19 +15,13 @@ export class Message extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  // @ManyToOne(() => User, (user) => user.message)
-  // @JoinColumn()
-  // sender_id = new User();
-
   @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: "sender_id" })
   @Column("int", { nullable: true })
   sender_id = null;
 
-  // @ManyToOne(() => ChatRoom, (chatroom) => chatroom.message)
-  // @JoinColumn()
-  // room_id = new ChatRoom();
-
   @ManyToOne(() => ChatRoom, (chatroom) => chatroom.id)
+  @JoinColumn({ name: "room_id" })
   @Column("int", { nullable: true })
   room_id = null;
 

@@ -42,6 +42,7 @@ export class Session extends BaseEntity {
   last_active = new Date();
 
   @ManyToOne((user_id) => User, (user) => user.id)
+  @JoinColumn({ name: "user_id" })
   @Column("int", { nullable: true })
   user_id = null;
 

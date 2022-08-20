@@ -20,15 +20,13 @@ export class Member extends BaseEntity {
   @Column("boolean", { default: false })
   is_mute = false;
 
-  // @ManyToOne(() => User, (user) => user.member)
-  // @JoinColumn()
-  // mem_id = new User();
-
   @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: "user_id" })
   @Column("int", { nullable: true })
   user_id = null;
 
   @ManyToOne(() => ChatRoom, (chatroom) => chatroom.id)
+  @JoinColumn({ name: "room_id" })
   @Column("int", { nullable: true })
   room_id = null;
 

@@ -6,8 +6,11 @@ export class ChatRoom extends BaseEntity {
   id = new Number();
   type = "";
 
-  @Column("enum", { enum: ["direct", "group"], default: "direct" })
+  @Column("text", { nullable: true })
   title = "";
+
+  @Column("enum", { enum: ["direct", "group"], default: "direct" })
+  type = "";
 
   @Column("enum", { enum: ["public", "private"], default: "private" })
   group_types = "private";
