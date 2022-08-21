@@ -24,7 +24,7 @@ export const sendOTPVerificationEmail = async (user) => {
       subject: "Verify Your Email",
       html: `Enter ${otp}`,
     };
-
+    console.log("OTP", otp);
     console.log("OTPMAIL ", user);
 
     const saltRounds = 10;

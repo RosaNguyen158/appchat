@@ -132,6 +132,13 @@ export const updateActive = async (userId) => {
       user_id: userId,
     },
   });
+  const updateActive = await AppDataSource.getRepository(User).findOne({
+    where: {
+      id: userId,
+    },
+  });
+  updateActive.is_active = false;
+  await AppDataSource.manager.save(updateActive);
   updateSession.last_active = new Date();
   return updateSession;
 };

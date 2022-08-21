@@ -38,6 +38,7 @@ export const RefreshToken = async (req, res, next) => {
                 message: "thanh cong",
                 token: tokens.accessToken,
               });
+              req.body.user_id = user_session.user_id;
               next();
             } else {
               res.json({
@@ -47,6 +48,8 @@ export const RefreshToken = async (req, res, next) => {
           }
         );
       }
+      (req.body.user_id = user_session.user_id),
+        (req.body.token = user_session.token);
       next();
     });
   }

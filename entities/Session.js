@@ -38,19 +38,19 @@ export class Session extends BaseEntity {
   @Column("text", { nullable: true })
   refresh_token = "";
 
-  @Column("timestamp with time zone")
-  last_active = new Date();
+  @Column("timestamp with time zone", { nullable: true })
+  last_active = null;
 
   @ManyToOne((user_id) => User, (user) => user.id)
   @JoinColumn({ name: "user_id" })
-  @Column("int", { nullable: true })
-  user_id = null;
+  @Column("int")
+  user_id = 0;
 
   // @JoinColumn("numberic", { nullable: true })
   // userId = null;
   @Column("timestamp with time zone")
   created_at = new Date();
 
-  @Column("timestamp with time zone")
-  updated_at = new Date();
+  @Column("timestamp with time zone", { nullable: true })
+  updated_at = null;
 }

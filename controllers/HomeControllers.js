@@ -7,6 +7,7 @@ import { React } from "@/entities/React";
 import { User } from "@/entities/User";
 import { Friend } from "@/entities/Friend";
 import { Session } from "@/entities/Session";
+import { Setting } from "@/entities/Setting";
 const __dirname = path.resolve();
 
 dotenv.config();
@@ -28,22 +29,17 @@ export const insertReact = //middleware
 export const updateContact = async (req, res, next) => {
   const firstNameChange = req.query.firstname;
   const lastNameChange = req.query.lastname;
-  const authorizationHeader = req.headers["authorization"];
-  const token = authorizationHeader; // token
-  let user_session = await AppDataSource.getRepository(Session).findOne({
+  const updateContact = await AppDataSource.getRepository(User).findOne({
     where: {
-      token: token,
+      id: req.query.user_id,
     },
   });
-  const updateSession = await AppDataSource.getRepository(User).findOne({
-    where: {
-      first_name: firstNameChange,
-      last_name: lastNameChange,
-      id: user_session.id,
-    },
-  });
+  updateContact.first_name = firstNameChange;
+  updateContact.last_name = lastNameChange;
+  await AppDataSource.manager.save(updateContact);
   return res.json({
     message: "Updated Success!",
+    token: req.body.token,
   });
 };
 
@@ -57,48 +53,131 @@ export const searchContact = async (req, res, next) => {
   return res.json({
     result: findUser,
     message: "Updated Success!",
+    token: req.body.token,
   });
 };
 
-export const home =
-  ((req, res, next) => {
-    try {
-      console.log(req.cookies.token);
-      let token = req.cookies.token;
-      let result = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-      if (result) {
-        next();
-      }
-    } catch (error) {
-      return res.redirect("/login");
-    }
-  },
-  (req, res, next) => {
-    res.sendFile(path.join(__dirname, "home.html"));
-  });
-
-export const friend = async (req, res, next) => {
-  const friend = new Friend();
-  friend.user_id = req.body.user_id;
-  friend.friend_id = req.body.friend_id;
-  await AppDataSource.manager.save(friend);
-  res.status(200);
+export const requestFriend = async (req, res, next) => {
+  const requestFriend = new Friend();
+  requestFriend.user_id = req.body.user_id;
+  requestFriend.friend_id = req.body.friend_id;
+  requestFriend.status = "request";
+  await AppDataSource.manager.save(requestFriend);
+  return res.status(200);
 };
 
-export const product =
-  ((req, res, next) => {
-    try {
-      console.log("product ", req.cookies.token);
-      console.log("product ", req.headers);
-      let token = req.cookies.token;
-      let result = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-      if (result) {
-        next();
-      }
-    } catch (error) {
-      return res.redirect("/login");
-    }
-  },
-  (req, res, next) => {
-    res.sendFile(path.join(__dirname, "/product.html"));
+export const confirmFriend = async (req, res, next) => {
+  let findReqFriend = await AppDataSource.getRepository(Friend).findOne({
+    where: {
+      friend_id: req.body.user_id,
+      user_id: req.body.friend_id,
+    },
   });
+  findReqFriend.status = "friend";
+  await AppDataSource.manager.save(findReqFriend);
+
+  const newFriend = new Friend();
+  newFriend.user_id = req.body.user_id;
+  newFriend.friend_id = req.body.friend_id;
+  newFriend.status = "friend";
+  await AppDataSource.manager.save(newFriend);
+  return res.status("200");
+};
+
+export const unFriend = async (req, res, next) => {
+  let recordFriend1 = await AppDataSource.createQueryBuilder()
+    .delete()
+    .from(Friend)
+    .where("user_id = :user_id and friend_id = :friend_id", {
+      user_id: req.body.user_id,
+      friend_id: req.body.friend_id,
+    })
+    .execute();
+  let recordFriend2 = await AppDataSource.createQueryBuilder()
+    .delete()
+    .from(Friend)
+    .where("friend_id = :user_id and user_id = :friend_id", {
+      user_id: req.body.user_id,
+      friend_id: req.body.friend_id,
+    })
+    .execute();
+  return res.status(200);
+};
+
+export const deleteSession = async (req, res, next) => {
+  let recordFriend1 = await AppDataSource.createQueryBuilder()
+    .delete()
+    .from(Session)
+    .where("id = :session_id", {
+      session_id: req.body.session_id,
+    })
+    .execute();
+  return res.status(200);
+};
+
+export const updatePrivacy = async (req, res, next) => {
+  let findSetting = await AppDataSource.getRepository(Setting).findOne({
+    where: {
+      user_id: req.body.user_id,
+    },
+  });
+  if (req.body.role_phone_seenby) {
+    findSetting.role_phone_seenby = req.body.role_phone_seenby;
+  }
+  if (req.body.role_lastseen) {
+    findSetting.role_lastseen = req.body.role_lastseen;
+  }
+  if (req.body.role_add_to_group) {
+    findSetting.role_add_to_group = req.body.role_add_to_group;
+  }
+  if (req.body.link_in_fwd) {
+    findSetting.link_in_fwd = req.body.link_in_fwd;
+  }
+  await AppDataSource.manager.save(findSetting);
+  return res.status(200);
+};
+
+export const infoUser = async (req, res, next) => {
+  try {
+    let user_id = req.body.user_id,
+      contact_id = req.body.contact_id;
+
+    let findUser = await AppDataSource.getRepository(User).findOne({
+      where: {
+        id: req.body.contact_id,
+      },
+    });
+
+    let userSetting = await AppDataSource.getRepository(Setting).findOne({
+      where: {
+        user_id: req.body.contact_id,
+      },
+    });
+
+    let userFriend = await AppDataSource.getRepository(Friend).findOne({
+      where: {
+        user_id: user_id,
+        friend_id: contact_id,
+      },
+    });
+    console.log("fiend", userFriend, user_id);
+    let infoUser = {};
+    infoUser.firstname = findUser.first_name;
+    infoUser.lastname = findUser.last_name;
+    infoUser.username = findUser.username;
+    infoUser.username = findUser.username;
+
+    if (userSetting.role_phone_seenby == "Everybody") {
+      infoUser.email = findUser.email;
+    } else if (
+      userSetting.role_phone_seenby == "My contacts" &&
+      userFriend &&
+      userFriend.status == "friend"
+    ) {
+      infoUser.email = findUser.email;
+    }
+    return res.json({ infoUser: infoUser, token: req.body.token });
+  } catch (error) {
+    return res.json({ message: error, token: req.body.token });
+  }
+};
