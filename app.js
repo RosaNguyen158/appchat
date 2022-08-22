@@ -16,6 +16,7 @@ import { ReactMessage } from "@/entities/ReactMessage";
 import { Setting } from "@/entities/Setting";
 import { SeenBy } from "@/entities/SeenBy";
 import * as chatSocket from "@/services/server";
+import { Notification } from "./entities/Notification";
 
 export const http = require("http");
 // import server from "@/services/server";
@@ -48,6 +49,7 @@ export const AppDataSource = new DataSource({
     ReactMessage,
     Setting,
     SeenBy,
+    Notification,
   ],
   // entities: ["@/entities/*"],
   synchronize: true,
@@ -67,8 +69,8 @@ app.use("/", apiRouter);
 let userSocket = 0;
 
 io.of("/direct-room").on("connection", (socket) => {
-  chatSocket.directRoom(io, socket, userSocket);
-  chatSocket.disconnectUser(io, socket, userSocket);
+  chatSocket.directRoom(io, socket);
+  chatSocket.disconnectUser(io, socket);
 });
 io.of("/create-new-room").on("connection", (socket) => {
   chatSocket.createRoom(io, socket);

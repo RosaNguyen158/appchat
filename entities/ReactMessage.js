@@ -15,21 +15,24 @@ export class ReactMessage extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @ManyToOne(() => Message, (message) => message.react_message)
-  @JoinColumn()
-  message_id = new Message();
+  @ManyToOne(() => Message, (message) => message.id)
+  @JoinColumn({ name: "message_id" })
+  @Column("text")
+  message_id = "";
 
-  @ManyToOne(() => React, (react) => react.react_message)
-  @JoinColumn()
-  room_id = new React();
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: "user_id" })
+  @Column("text")
+  member_id = "";
 
-  @ManyToOne(() => User, (user) => user.react_message)
-  @JoinColumn()
-  room_id = new User();
+  @ManyToOne(() => React, (react) => react.id)
+  @JoinColumn({ name: "react_id" })
+  @Column("text")
+  react_id = "";
 
   @Column("timestamp with time zone")
   created_at = new Date();
 
-  @Column("timestamp with time zone")
-  updated_at = new Date();
+  @Column("timestamp with time zone", { nullable: true })
+  updated_at = null;
 }

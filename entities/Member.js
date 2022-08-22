@@ -20,6 +20,9 @@ export class Member extends BaseEntity {
   @Column("boolean", { default: false })
   is_mute = false;
 
+  @Column("boolean", { default: false })
+  active_in_group = false;
+
   @ManyToOne(() => User, (user) => user.id)
   @JoinColumn({ name: "user_id" })
   @Column("int", { nullable: true })

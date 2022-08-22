@@ -34,11 +34,11 @@ export const RefreshToken = async (req, res, next) => {
               user_session.token = tokens.accessToken;
               user_session.refresh_token = tokens.refreshToken;
               await AppDataSource.manager.save(user_session);
+              req.body.user_id = user_session.user_id;
               res.json({
-                message: "thanh cong",
+                message: "new token",
                 token: tokens.accessToken,
               });
-              req.body.user_id = user_session.user_id;
               next();
             } else {
               res.json({

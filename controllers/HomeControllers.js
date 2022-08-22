@@ -8,6 +8,8 @@ import { User } from "@/entities/User";
 import { Friend } from "@/entities/Friend";
 import { Session } from "@/entities/Session";
 import { Setting } from "@/entities/Setting";
+import * as ChatController from "@/controllers/ChatControllers";
+import { convertMsToHM } from "@/helpers/convertTimeLastSeen";
 const __dirname = path.resolve();
 
 dotenv.config();
@@ -63,7 +65,13 @@ export const requestFriend = async (req, res, next) => {
   requestFriend.friend_id = req.body.friend_id;
   requestFriend.status = "request";
   await AppDataSource.manager.save(requestFriend);
-  return res.status(200);
+  const infoUser = await ChatController.findUser(req.body.user_id);
+  const newNotice = await ChatController.addNotice(
+    req.body.friend_id,
+    `${infoUser.username} sent you a friend request.`
+  );
+  console.log(newNotice);
+  return;
 };
 
 export const confirmFriend = async (req, res, next) => {
@@ -81,7 +89,13 @@ export const confirmFriend = async (req, res, next) => {
   newFriend.friend_id = req.body.friend_id;
   newFriend.status = "friend";
   await AppDataSource.manager.save(newFriend);
-  return res.status("200");
+
+  const infoUser = await ChatController.findUser(req.body.user_id);
+  await ChatController.updateNotice(
+    req.body.friend_id,
+    `${infoUser.username} accepted your friend request.`
+  );
+  return res.status(200);
 };
 
 export const unFriend = async (req, res, next) => {
@@ -176,8 +190,20 @@ export const infoUser = async (req, res, next) => {
     ) {
       infoUser.email = findUser.email;
     }
-    return res.json({ infoUser: infoUser, token: req.body.token });
+
+    if (userSetting.role_lastseen == "Everybody") {
+      if (findUser.is_active) infoUser.lastseen = "online";
+      infoUser.lastseen = convertMsToHM(new Date() - findUser.last_seen);
+    } else if (
+      userSetting.role_lastseen == "My contacts" &&
+      userFriend &&
+      userFriend.status == "friend"
+    ) {
+      if (findUser.is_active) infoUser.lastseen = "online";
+      infoUser.lastseen = convertMsToHM(new Date() - findUser.last_seen);
+    }
+    return res.send({ infoUser: infoUser });
   } catch (error) {
-    return res.json({ message: error, token: req.body.token });
+    return;
   }
 };

@@ -43,6 +43,9 @@ export class User {
   @Column("boolean", { default: true })
   is_active = true;
 
+  @Column("timestamp with time zone", { nullable: true })
+  last_seen = null;
+
   @Column("timestamp with time zone")
   created_at = new Date();
 

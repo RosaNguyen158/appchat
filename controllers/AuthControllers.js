@@ -22,7 +22,7 @@ export const register = async (req, res, next) => {
   userSetting.user_id = user.id;
   await AppDataSource.manager.save(userSetting);
   console.log(user.id);
-  // res.redirect("/auth/login");
+  login(req, res, next);
   res.json({ message: "Successfully Saved." });
 };
 

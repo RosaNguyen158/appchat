@@ -8,27 +8,25 @@ import {
 } from "typeorm";
 import { User } from "./User";
 
-@Entity({ name: "friend" })
-export class Friend extends BaseEntity {
+@Entity({ name: "notification" })
+export class Notification extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
   @ManyToOne(() => User, (user) => user.id)
   @JoinColumn({ name: "user_id" })
-  @Column("text")
-  user_id = "";
+  @Column("int")
+  user_id = 0;
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: "friend_id" })
-  @Column("text")
-  friend_id = "";
+  @Column("boolean", { nullable: true })
+  is_read = false;
 
-  @Column("text")
-  status = "";
+  @Column("text", { nullable: true })
+  content = 0;
 
   @Column("timestamp with time zone")
   created_at = new Date();
 
-  @Column("timestamp with time zone", { nullable: true })
-  updated_at = null;
+  @Column("timestamp with time zone")
+  updated_at = new Date();
 }
