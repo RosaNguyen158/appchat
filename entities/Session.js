@@ -14,6 +14,11 @@ export class Session extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
+  @ManyToOne((user_id) => User, (user) => user.id)
+  @JoinColumn({ name: "user_id" })
+  @Column("int")
+  user_id = 0;
+
   @Column("text", { nullable: true })
   device_name = null;
 
@@ -38,18 +43,14 @@ export class Session extends BaseEntity {
   @Column("text", { nullable: true })
   refresh_token = "";
 
-  @Column("timestamp with time zone")
-  last_active = new Date();
-
-  @ManyToOne((user_id) => User, (user) => user.id)
-  @Column("int", { nullable: true })
-  user_id = null;
+  @Column("timestamp with time zone", { nullable: true })
+  last_active = null;
 
   // @JoinColumn("numberic", { nullable: true })
   // userId = null;
   @Column("timestamp with time zone")
   created_at = new Date();
 
-  @Column("timestamp with time zone")
-  updated_at = new Date();
+  @Column("timestamp with time zone", { nullable: true })
+  updated_at = null;
 }

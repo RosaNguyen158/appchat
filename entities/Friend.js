@@ -14,11 +14,13 @@ export class Friend extends BaseEntity {
   id = new Number();
 
   @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn()
+  @JoinColumn({ name: "user_id" })
+  @Column("text", { nullable: true })
   user_id = "";
 
   @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn()
+  @JoinColumn({ name: "friend_id" })
+  @Column("text", { nullable: true })
   friend_id = "";
 
   @Column("text")
@@ -27,6 +29,6 @@ export class Friend extends BaseEntity {
   @Column("timestamp with time zone")
   created_at = new Date();
 
-  @Column("timestamp with time zone")
-  updated_at = new Date();
+  @Column("timestamp with time zone", { nullable: true })
+  updated_at = null;
 }

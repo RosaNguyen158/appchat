@@ -4,10 +4,12 @@ import { Entity, Column, BaseEntity, PrimaryGeneratedColumn } from "typeorm";
 export class ChatRoom extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
-  type = "";
+
+  @Column("text", { nullable: true })
+  title = "";
 
   @Column("enum", { enum: ["direct", "group"], default: "direct" })
-  title = "";
+  type = "";
 
   @Column("enum", { enum: ["public", "private"], default: "private" })
   group_types = "private";
@@ -18,6 +20,6 @@ export class ChatRoom extends BaseEntity {
   @Column("timestamp with time zone")
   created_at = new Date();
 
-  @Column("timestamp with time zone")
-  updated_at = new Date();
+  @Column("timestamp with time zone", { nullable: true })
+  updated_at = null;
 }

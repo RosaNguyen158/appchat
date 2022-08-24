@@ -13,25 +13,44 @@ export class Setting extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @Column("text")
-  role_phone_seenby = "";
+  @OneToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: "user_id" })
+  @Column("int")
+  user_id = 0;
 
-  @Column("text")
-  role_lastseen = "";
+  @Column("enum", {
+    enum: ["Everybody", "My contacts", "Nobody"],
+    default: "Everybody",
+  })
+  role_phone_seenby = "Everybody";
 
-  @Column("text")
-  role_add_to_group = "";
+  @Column("enum", {
+    enum: ["Everybody", "My contacts", "Nobody"],
+    default: "Everybody",
+  })
+  role_lastseen = "Everybody";
 
-  @Column("text")
-  link_in_fwd = "";
+  @Column("enum", {
+    enum: ["Everybody", "My contacts"],
+    default: "Everybody",
+  })
+  role_add_to_group = "Everybody";
 
-  @OneToOne(() => User, (user) => user.setting)
-  @JoinColumn()
-  user_id = new User();
+  @Column("enum", {
+    enum: ["Everybody", "My contacts", "Nobody"],
+    default: "Everybody",
+  })
+  link_in_fwd = "Everybody";
+
+  @Column("boolean", { default: false })
+  active_in_group = false;
+
+  @Column("boolean", { default: false })
+  two_step_verification = false;
 
   @Column("timestamp with time zone")
   created_at = new Date();
 
-  @Column("timestamp with time zone")
-  updated_at = new Date();
+  @Column("timestamp with time zone", { nullable: true })
+  updated_at = null;
 }
