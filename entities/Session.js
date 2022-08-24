@@ -14,6 +14,11 @@ export class Session extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
+  @ManyToOne((user_id) => User, (user) => user.id)
+  @JoinColumn({ name: "user_id" })
+  @Column("int")
+  user_id = 0;
+
   @Column("text", { nullable: true })
   device_name = null;
 
@@ -40,11 +45,6 @@ export class Session extends BaseEntity {
 
   @Column("timestamp with time zone", { nullable: true })
   last_active = null;
-
-  @ManyToOne((user_id) => User, (user) => user.id)
-  @JoinColumn({ name: "user_id" })
-  @Column("int")
-  user_id = 0;
 
   // @JoinColumn("numberic", { nullable: true })
   // userId = null;

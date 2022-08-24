@@ -38,10 +38,16 @@ export class User {
   refresh_secret_key = makeid(4);
 
   @Column("text", { nullable: true })
-  otp = "";
+  temp_token = "";
 
-  @Column("boolean", { default: true })
-  is_active = true;
+  @Column("text", { nullable: true })
+  secret_2FA = "";
+
+  @Column("text", { nullable: true })
+  recovery = "";
+
+  @Column("boolean")
+  is_active = false;
 
   @Column("timestamp with time zone", { nullable: true })
   last_seen = null;

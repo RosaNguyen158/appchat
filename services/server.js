@@ -274,8 +274,8 @@ const checkPrivacyMember = async (userId, memId, socket) => {
   const infoMember = await ChatController.findUser(memId);
   let userFriend = await AppDataSource.getRepository(Friend).findOne({
     where: {
-      user_id: userId,
-      friend_id: memId,
+      user_id: memId,
+      friend_id: userId,
     },
   });
   if (userPrivacy.role_add_to_group == "Everybody") {

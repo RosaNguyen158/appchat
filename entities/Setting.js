@@ -13,6 +13,11 @@ export class Setting extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
+  @OneToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: "user_id" })
+  @Column("int")
+  user_id = 0;
+
   @Column("enum", {
     enum: ["Everybody", "My contacts", "Nobody"],
     default: "Everybody",
@@ -37,10 +42,11 @@ export class Setting extends BaseEntity {
   })
   link_in_fwd = "Everybody";
 
-  @OneToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: "user_id" })
-  @Column("int")
-  user_id = 0;
+  @Column("boolean", { default: false })
+  active_in_group = false;
+
+  @Column("boolean", { default: false })
+  two_step_verification = false;
 
   @Column("timestamp with time zone")
   created_at = new Date();
