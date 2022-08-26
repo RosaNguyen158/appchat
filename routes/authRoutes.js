@@ -6,6 +6,7 @@ const route = express.Router();
 
 // route.post("/refreshToken", AuthController.RefreshToken);
 route.post("/register", AuthController.register);
+route.post("/verify-otp-email", AuthController.verifyOTPEmail);
 route.post("/login", AuthController.login);
 route.post("/verify", AuthController.verifyToLogin);
 route.post("/enable-2FA", RefreshToken, AuthController.twoFAEnable);

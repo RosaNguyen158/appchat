@@ -15,5 +15,10 @@ route.post("/update-privacy", RefreshToken, HomeController.updatePrivacy);
 route.get("/search-contact", RefreshToken, HomeController.searchContact);
 route.get("/search-contact", RefreshToken, HomeController.searchContact);
 route.get("/info-user", RefreshToken, HomeController.infoUser);
+route.delete(
+  "/delete-all-session",
+  RefreshToken,
+  HomeController.deleteAllSession
+);
 
 export default route;

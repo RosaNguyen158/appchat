@@ -45,7 +45,7 @@ export const updateContact = async (req, res, next) => {
     const lastNameChange = req.query.lastname;
     const updateContact = await AppDataSource.getRepository(User).findOne({
       where: {
-        id: req.query.user_id,
+        id: req.user.id,
       },
     });
     updateContact.first_name = firstNameChange;
@@ -69,7 +69,7 @@ export const updateContact = async (req, res, next) => {
 export const searchContact = async (req, res, next) => {
   try {
     const findByKey = req.query.findByKey;
-    let findUser = await AppDataSource.getRepository(User).findOne({
+    let findUser = await AppDataSource.getRepository(User).find({
       where: {
         username: findByKey,
       },
@@ -128,8 +128,15 @@ export const confirmFriend = async (req, res, next) => {
       where: {
         friend_id: req.user.id,
         user_id: req.body.friend_id,
+        status: "request",
       },
     });
+    if (!findReqFriend) {
+      return res.json({
+        message: "Request friend does not exist",
+        token: req.token,
+      });
+    }
     findReqFriend.status = "friend";
     await AppDataSource.manager.save(findReqFriend);
 
@@ -140,7 +147,7 @@ export const confirmFriend = async (req, res, next) => {
     await AppDataSource.manager.save(newFriend);
 
     const infoUser = await ChatController.findUser(req.user.id);
-    await ChatController.updateNotice(
+    await ChatController.addNotice(
       req.body.friend_id,
       `${infoUser.username} accepted your friend request.`
     );
@@ -155,6 +162,20 @@ export const confirmFriend = async (req, res, next) => {
 
 export const unFriend = async (req, res, next) => {
   try {
+    let findReqFriend = await AppDataSource.getRepository(Friend).findOne({
+      where: {
+        friend_id: req.user.id,
+        user_id: req.body.friend_id,
+        status: "friend",
+      },
+    });
+    console.log(findReqFriend);
+    if (!findReqFriend) {
+      return res.json({
+        message: "Not found friend relationship",
+        token: req.token,
+      });
+    }
     let recordFriend1 = await AppDataSource.createQueryBuilder()
       .delete()
       .from(Friend)
@@ -174,7 +195,7 @@ export const unFriend = async (req, res, next) => {
 
     return res.status(200).json({
       message: "Unfriend success",
-      token: req.body.token,
+      token: req.token,
     });
   } catch (error) {
     return res.json({ message: error.message, token: req.token });
@@ -186,6 +207,11 @@ export const updatePrivacy = async (req, res, next) => {
     let findSetting = await AppDataSource.getRepository(Setting).findOne({
       where: {
         user_id: req.user.id,
+      },
+    });
+    let findUser = await AppDataSource.getRepository(User).findOne({
+      where: {
+        id: req.user.id,
       },
     });
     if (!findSetting) {
@@ -205,6 +231,12 @@ export const updatePrivacy = async (req, res, next) => {
     }
     if (req.body.link_in_fwd) {
       findSetting.link_in_fwd = req.body.link_in_fwd;
+    }
+    if (req.body.two_step_verification) {
+      findSetting.two_step_verification = req.body.two_step_verification;
+      findUser.recovery = null;
+      findUser.secret_2FA = null;
+      await AppDataSource.manager.save(findUser);
     }
     const result = await AppDataSource.manager.save(findSetting);
     if (!result) {
@@ -262,15 +294,21 @@ export const infoUser = async (req, res, next) => {
     }
 
     if (userSetting.role_lastseen == "Everybody") {
-      if (findUser.is_active) infoUser.lastseen = "online";
-      infoUser.lastseen = convertMsToHM(new Date() - findUser.last_seen);
+      if (findUser.is_active) {
+        infoUser.status = "online";
+      } else {
+        infoUser.lastseen = convertMsToHM(new Date() - findUser.last_seen);
+      }
     } else if (
       userSetting.role_lastseen == "My contacts" &&
       userFriend &&
       userFriend.status == "friend"
     ) {
-      if (findUser.is_active) infoUser.lastseen = "online";
-      infoUser.lastseen = convertMsToHM(new Date() - findUser.last_seen);
+      if (findUser.is_active) {
+        infoUser.status = "online";
+      } else {
+        infoUser.lastseen = convertMsToHM(new Date() - findUser.last_seen);
+      }
     }
     return res.json({ infoUser: infoUser, token: req.token });
   } catch (error) {
@@ -280,16 +318,53 @@ export const infoUser = async (req, res, next) => {
 
 export const deleteSession = async (req, res, next) => {
   try {
-    let recordFriend1 = await AppDataSource.createQueryBuilder()
-      .delete()
-      .from(Session)
-      .where("id = :session_id", {
-        session_id: req.body.session_id,
-      })
-      .execute();
+    let checkSession = await AppDataSource.getRepository(Session).findOne({
+      where: {
+        id: req.body.session_id,
+      },
+    });
+    if (!checkSession) {
+      res.json({ message: "Session is not found", token: req.token });
+    } else if (checkSession.user_id == req.user.id) {
+      let recordFriend1 = await AppDataSource.createQueryBuilder()
+        .delete()
+        .from(Session)
+        .where("id = :session_id", {
+          session_id: req.body.session_id,
+        })
+        .execute();
+      return res
+        .status(200)
+        .json({ message: "Deleted session", token: req.token });
+    }
+  } catch (error) {
+    return res.json({ message: error.message, token: req.token });
+  }
+};
+
+export const deleteAllSession = async (req, res, next) => {
+  try {
+    let listSession = await AppDataSource.getRepository(Session).find({
+      where: {
+        user_id: req.user.id,
+      },
+    });
+    if (listSession.length > 1) {
+      listSession.map(async (session) => {
+        if (session.id != req.session) {
+          let recordFriend1 = await AppDataSource.createQueryBuilder()
+            .delete()
+            .from(Session)
+            .where("id = :session_id", {
+              session_id: session.id,
+            })
+            .execute();
+        }
+      });
+    }
     return res
       .status(200)
-      .json({ message: "Deleted session", token: req.token });
+      .json({ message: "Deleted all session", token: req.token });
   } catch (error) {
     return res.json({ message: error.message, token: req.token });
   }

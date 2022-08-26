@@ -11,7 +11,11 @@ export const chatMessage = async (io, socket, roomId) => {
     const user = await ChatController.findUser(socket.handshake.headers.id);
     socket.on(eventSocket.chatMessage, async (message) => {
       socket.emit("sending", "sending");
-      await ChatController.insertMessage(message, user.id, roomId);
+      const messageInsert = await ChatController.insertMessage(
+        message,
+        user.id,
+        roomId
+      );
       await socket.broadcast.emit(eventSocket.chatMessage, {
         message: message,
         username: user.username,
@@ -34,11 +38,15 @@ export const chatMessage = async (io, socket, roomId) => {
       );
     });
 
+    // replyMessage : {replyMessage: id, message: content}
     socket.on(eventSocket.replyMessage, async (data) => {
       const dataParse = JSON.parse(JSON.stringify(data));
       const findReplyMessage = await ChatController.findMessage(
         dataParse.replyMessage
       );
+      if (!findReplyMessage) {
+        return socket.emit(eventSocket.error, "Message Reply does not exist");
+      }
       await ChatController.insertMessage(
         dataParse.message,
         user.id,
@@ -52,11 +60,26 @@ export const chatMessage = async (io, socket, roomId) => {
       });
     });
 
+    // forwardMessage {fwdMessage: id, toRoom: id}
     socket.on(eventSocket.forwardMessage, async (data) => {
       const dataParse = JSON.parse(JSON.stringify(data));
+      console.log(dataParse);
       const findFwdMessage = await ChatController.findMessage(
         dataParse.fwdMessage
       );
+      if (!findFwdMessage) {
+        return socket.emit(eventSocket.error, "Message does not exist");
+      }
+      const checkMember = await ChatController.findMember(
+        user.id,
+        dataParse.toRoom
+      );
+      if (!checkMember) {
+        return socket.emit(
+          eventSocket.error,
+          "You aren't a member of this room"
+        );
+      }
       const mess = await ChatController.insertMessage(
         findFwdMessage.message,
         user.id,
@@ -64,6 +87,8 @@ export const chatMessage = async (io, socket, roomId) => {
         null,
         findFwdMessage.id
       );
+
+      console.log("checkMember", checkMember);
       socket.to(dataParse.toRoom).emit(eventSocket.forwardMessage, {
         note: "forward message",
         message: findFwdMessage.message,
@@ -76,7 +101,7 @@ export const chatMessage = async (io, socket, roomId) => {
 
     disconnectUser(io, socket);
   } catch (error) {
-    socket.emit(eventSocket.error, error.message);
+    return socket.emit(eventSocket.error, error.message);
   }
 };
 
@@ -120,13 +145,19 @@ export const directRoom = async (io, socket) => {
       chatMessage(io, socket, roomId);
     }
   } catch (error) {
-    socket.emit(eventSocket.error, error.message);
+    return socket.emit(eventSocket.error, error.message);
   }
 };
 
 export const joinRoom = async (io, socket) => {
   const user = await ChatController.findUser(socket.handshake.headers.id);
+  if (!user) {
+    return socket.emit(eventSocket.error, "User does not exist");
+  }
   const roomInfo = await ChatController.findRoom(socket.handshake.query.room);
+  if (!roomInfo) {
+    return socket.emit(eventSocket.error, "Room chat does not exist");
+  }
   const member = await ChatController.findMember(
     user.id,
     socket.handshake.query.room
@@ -158,6 +189,9 @@ export const joinRoom = async (io, socket) => {
 // if not found room by code => error: Not found, else addMember
 export const JoinByCode = async (io, socket) => {
   const user = await ChatController.findUser(socket.handshake.headers.id);
+  if (!user) {
+    return socket.emit(eventSocket.error, "User does not exist");
+  }
   const codeGroup = socket.handshake.query.code_roomchat;
   const findRoom = await ChatController.checkCode(codeGroup);
   if (findRoom) {
@@ -182,20 +216,28 @@ export const createRoom = async (io, socket) => {
   socket.on(eventSocket.create, async (data) => {
     const dataParse = JSON.parse(JSON.stringify(data));
     let countMember = 0;
-    let addMemberList = await dataParse.Friends.reduce(
+    if (dataParse.friends.length < 2) {
+      return socket.emit(eventSocket.error, {
+        message: "At least 3 members in a room",
+      });
+    }
+    let membersCantAdd = [];
+    let members = [];
+    let addMemberList = await dataParse.friends.reduce(
       async (memberList, member) => {
-        let members = [];
         let check = await checkPrivacyMember(user.id, member.friend_id, socket);
         console.log("check", check);
         if (check) {
           countMember++;
           members.push(member.friend_id);
+        } else {
+          membersCantAdd.push(member.friend_id);
         }
         return members;
       },
       []
     );
-    console.log("countMember", countMember);
+    console.log("countMember", membersCantAdd, members);
     if (countMember > 1) {
       const newRoom = await ChatController.createRoomChat(
         dataParse.title,
@@ -203,14 +245,32 @@ export const createRoom = async (io, socket) => {
         "private",
         makeid(6)
       );
-      await addMemberList.map(async (memberId) => {
+      members.map(async (memberId) => {
         await ChatController.addMember(newRoom.id, memberId);
       });
       await ChatController.addMember(newRoom.id, user.id);
       socket.join(newRoom.id);
+      if (membersCantAdd.length) {
+        membersCantAdd.map(async (memberId) => {
+          let member = await ChatController.findUser(memberId);
+          socket.emit(
+            eventSocket.error,
+            `Cant add ${member.username} into this room`
+          );
+        });
+      }
       socket.emit(eventSocket.newMessage, `Welcome to new room`);
       chatMessage(io, socket, newRoom.id);
     } else {
+      if (membersCantAdd.length) {
+        membersCantAdd.map(async (memberId) => {
+          let member = await ChatController.findUser(memberId);
+          socket.emit(
+            eventSocket.error,
+            `Cant add ${member.username} into this room`
+          );
+        });
+      }
       socket.emit(eventSocket.error, `At least 3 members in a room`);
     }
   });
@@ -225,6 +285,9 @@ export const disconnectUser = async (io, socket) => {
   try {
     const userId = socket.handshake.headers.id;
     const user = await ChatController.findUser(socket.handshake.headers.id);
+    if (!user) {
+      return socket.emit(eventSocket.error, `User does not exist`);
+    }
     socket.on("disconnect", async () => {
       console.log("socket.handshake.query.room", socket.handshake.query.room);
 
@@ -260,7 +323,7 @@ export const disconnectUser = async (io, socket) => {
       const updateSession = await ChatController.updateActive(user.id);
       socket.broadcast.emit(
         "userDisconnect",
-        `${user.username} has left the chat`
+        `${user.username} has left room chat`
       );
     });
   } catch (error) {

@@ -32,21 +32,27 @@ export const RefreshToken = async (req, res, next) => {
             user.refresh_secret_key,
             async (err, data) => {
               if (!err) {
+                console.log("REFRESHTOKEN");
                 const tokens = generateTokens(user);
                 user_session.token = tokens.accessToken;
                 user_session.refresh_token = tokens.refreshToken;
                 await AppDataSource.manager.save(user_session);
+                console.log(user_session);
                 req.user = user;
+                req.session = user_session.id;
                 // res.json({
                 //   token: tokens.accessToken,
                 // });
               } else {
-                res.json("Login Again");
+                return;
               }
             }
           );
         }
-        (req.user = user), (req.token = user_session.token);
+        (req.user = user),
+          (req.token = user_session.token),
+          (req.session = user_session.id);
+
         next();
       });
     }

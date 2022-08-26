@@ -6,3 +6,4 @@ export const error = "error";
 export const create = "create";
 export const react = "react";
 export const disconnect = "disconnect";
+export const home = "home";

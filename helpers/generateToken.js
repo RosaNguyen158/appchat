@@ -8,7 +8,7 @@ export const generateTokens = (payload) => {
 
   // Create JWT
   const accessToken = jwt.sign({ id, username }, secret_key, {
-    expiresIn: "3s",
+    expiresIn: "5m",
   });
 
   const refreshToken = jwt.sign({ id, username }, refresh_secret_key, {

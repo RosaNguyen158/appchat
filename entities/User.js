@@ -41,6 +41,9 @@ export class User {
   temp_token = "";
 
   @Column("text", { nullable: true })
+  otp_email = "";
+
+  @Column("text", { nullable: true })
   secret_2FA = "";
 
   @Column("text", { nullable: true })

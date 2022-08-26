@@ -37,7 +37,7 @@ export class Session extends BaseEntity {
   @Column("text", { nullable: true })
   ip_address = null;
 
-  @Column("text")
+  @Column("text", { nullable: true })
   token = "";
 
   @Column("text", { nullable: true })

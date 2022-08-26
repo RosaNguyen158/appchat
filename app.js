@@ -17,6 +17,7 @@ import { Setting } from "@/entities/Setting";
 import { SeenBy } from "@/entities/SeenBy";
 import * as chatSocket from "@/services/server";
 import { Notification } from "./entities/Notification";
+import { home } from "./socketconfig";
 
 export const http = require("http");
 // import server from "@/services/server";
@@ -67,6 +68,10 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/", apiRouter);
 let userSocket = 0;
+
+io.on("connection", (socket) => {
+  socket.emit(home, "Welcome to App Chat!");
+});
 
 io.of("/direct-room").on("connection", (socket) => {
   chatSocket.directRoom(io, socket);
