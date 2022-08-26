@@ -48,8 +48,8 @@ export const updateContact = async (req, res, next) => {
         id: req.user.id,
       },
     });
-    updateContact.first_name = firstNameChange;
-    updateContact.last_name = lastNameChange;
+    updateContact.firstName = firstNameChange;
+    updateContact.lastName = lastNameChange;
     const result = await AppDataSource.manager.save(updateContact);
     if (!result) {
       return res.json({
@@ -93,7 +93,7 @@ export const requestFriend = async (req, res, next) => {
   try {
     let findFriend = await AppDataSource.getRepository(User).findOne({
       where: {
-        id: req.body.friend_id,
+        id: req.body.friendId,
       },
     });
     if (!findFriend) {
@@ -103,13 +103,13 @@ export const requestFriend = async (req, res, next) => {
       });
     }
     const requestFriend = new Friend();
-    requestFriend.user_id = req.user.id;
-    requestFriend.friend_id = req.body.friend_id;
+    requestFriend.userId = req.user.id;
+    requestFriend.friendId = req.body.friendId;
     requestFriend.status = "request";
     await AppDataSource.manager.save(requestFriend);
     const infoUser = await ChatController.findUser(req.user.id);
     const newNotice = await ChatController.addNotice(
-      req.body.friend_id,
+      req.body.friendId,
       `${infoUser.username} sent you a friend request.`
     );
     console.log(newNotice);
@@ -126,8 +126,8 @@ export const confirmFriend = async (req, res, next) => {
   try {
     let findReqFriend = await AppDataSource.getRepository(Friend).findOne({
       where: {
-        friend_id: req.user.id,
-        user_id: req.body.friend_id,
+        friendId: req.user.id,
+        userId: req.body.friendId,
         status: "request",
       },
     });
@@ -141,14 +141,14 @@ export const confirmFriend = async (req, res, next) => {
     await AppDataSource.manager.save(findReqFriend);
 
     const newFriend = new Friend();
-    newFriend.user_id = req.user.id;
-    newFriend.friend_id = req.body.friend_id;
+    newFriend.userId = req.user.id;
+    newFriend.friendId = req.body.friendId;
     newFriend.status = "friend";
     await AppDataSource.manager.save(newFriend);
 
     const infoUser = await ChatController.findUser(req.user.id);
     await ChatController.addNotice(
-      req.body.friend_id,
+      req.body.friendId,
       `${infoUser.username} accepted your friend request.`
     );
     return res.status(200).json({
@@ -164,8 +164,8 @@ export const unFriend = async (req, res, next) => {
   try {
     let findReqFriend = await AppDataSource.getRepository(Friend).findOne({
       where: {
-        friend_id: req.user.id,
-        user_id: req.body.friend_id,
+        friendId: req.user.id,
+        userId: req.body.friendId,
         status: "friend",
       },
     });
@@ -179,17 +179,17 @@ export const unFriend = async (req, res, next) => {
     let recordFriend1 = await AppDataSource.createQueryBuilder()
       .delete()
       .from(Friend)
-      .where("user_id = :user_id and friend_id = :friend_id", {
-        user_id: req.user.id,
-        friend_id: req.body.friend_id,
+      .where("userId = :userId and friendId = :friendId", {
+        userId: req.user.id,
+        friendId: req.body.friendId,
       })
       .execute();
     let recordFriend2 = await AppDataSource.createQueryBuilder()
       .delete()
       .from(Friend)
-      .where("friend_id = :user_id and user_id = :friend_id", {
-        user_id: req.user.id,
-        friend_id: req.body.friend_id,
+      .where("friendId = :userId and userId = :friendId", {
+        userId: req.user.id,
+        friendId: req.body.friendId,
       })
       .execute();
 
@@ -206,7 +206,7 @@ export const updatePrivacy = async (req, res, next) => {
   try {
     let findSetting = await AppDataSource.getRepository(Setting).findOne({
       where: {
-        user_id: req.user.id,
+        userId: req.user.id,
       },
     });
     let findUser = await AppDataSource.getRepository(User).findOne({
@@ -220,22 +220,22 @@ export const updatePrivacy = async (req, res, next) => {
         token: req.token,
       });
     }
-    if (req.body.role_phone_seenby) {
-      findSetting.role_phone_seenby = req.body.role_phone_seenby;
+    if (req.body.rolePhoneSeenby) {
+      findSetting.rolePhoneSeenby = req.body.rolePhoneSeenby;
     }
-    if (req.body.role_lastseen) {
-      findSetting.role_lastseen = req.body.role_lastseen;
+    if (req.body.roleLastseen) {
+      findSetting.roleLastseen = req.body.roleLastseen;
     }
-    if (req.body.role_add_to_group) {
-      findSetting.role_add_to_group = req.body.role_add_to_group;
+    if (req.body.roleAddToGroup) {
+      findSetting.roleAddToGroup = req.body.roleAddToGroup;
     }
-    if (req.body.link_in_fwd) {
-      findSetting.link_in_fwd = req.body.link_in_fwd;
+    if (req.body.linkInFwd) {
+      findSetting.linkInFwd = req.body.linkInFwd;
     }
-    if (req.body.two_step_verification) {
-      findSetting.two_step_verification = req.body.two_step_verification;
+    if (req.body.twoStepVerification) {
+      findSetting.twoStepVerification = req.body.twoStepVerification;
       findUser.recovery = null;
-      findUser.secret_2FA = null;
+      findUser.secret2FA = null;
       await AppDataSource.manager.save(findUser);
     }
     const result = await AppDataSource.manager.save(findSetting);
@@ -256,58 +256,58 @@ export const updatePrivacy = async (req, res, next) => {
 
 export const infoUser = async (req, res, next) => {
   try {
-    let user_id = req.user.id,
-      contact_id = req.body.contact_id;
+    let userId = req.user.id,
+      contactId = req.body.contactId;
 
     let findUser = await AppDataSource.getRepository(User).findOne({
       where: {
-        id: req.body.contact_id,
+        id: req.body.contactId,
       },
     });
 
     let userSetting = await AppDataSource.getRepository(Setting).findOne({
       where: {
-        user_id: req.body.contact_id,
+        userId: req.body.contactId,
       },
     });
 
     let userFriend = await AppDataSource.getRepository(Friend).findOne({
       where: {
-        user_id: user_id,
-        friend_id: contact_id,
+        userId: userId,
+        friendId: contactId,
       },
     });
     let infoUser = {};
-    infoUser.firstname = findUser.first_name;
-    infoUser.lastname = findUser.last_name;
+    infoUser.firstname = findUser.firstName;
+    infoUser.lastname = findUser.lastName;
     infoUser.username = findUser.username;
     infoUser.username = findUser.username;
 
-    if (userSetting.role_phone_seenby == "Everybody") {
+    if (userSetting.rolePhoneSeenby == "Everybody") {
       infoUser.email = findUser.email;
     } else if (
-      userSetting.role_phone_seenby == "My contacts" &&
+      userSetting.rolePhoneSeenby == "My contacts" &&
       userFriend &&
       userFriend.status == "friend"
     ) {
       infoUser.email = findUser.email;
     }
 
-    if (userSetting.role_lastseen == "Everybody") {
-      if (findUser.is_active) {
+    if (userSetting.roleLastseen == "Everybody") {
+      if (findUser.isActive) {
         infoUser.status = "online";
       } else {
-        infoUser.lastseen = convertMsToHM(new Date() - findUser.last_seen);
+        infoUser.lastseen = convertMsToHM(new Date() - findUser.lastSeen);
       }
     } else if (
-      userSetting.role_lastseen == "My contacts" &&
+      userSetting.roleLastseen == "My contacts" &&
       userFriend &&
       userFriend.status == "friend"
     ) {
-      if (findUser.is_active) {
+      if (findUser.isActive) {
         infoUser.status = "online";
       } else {
-        infoUser.lastseen = convertMsToHM(new Date() - findUser.last_seen);
+        infoUser.lastseen = convertMsToHM(new Date() - findUser.lastSeen);
       }
     }
     return res.json({ infoUser: infoUser, token: req.token });
@@ -325,7 +325,7 @@ export const deleteSession = async (req, res, next) => {
     });
     if (!checkSession) {
       res.json({ message: "Session is not found", token: req.token });
-    } else if (checkSession.user_id == req.user.id) {
+    } else if (checkSession.userId == req.user.id) {
       let recordFriend1 = await AppDataSource.createQueryBuilder()
         .delete()
         .from(Session)
@@ -346,7 +346,7 @@ export const deleteAllSession = async (req, res, next) => {
   try {
     let listSession = await AppDataSource.getRepository(Session).find({
       where: {
-        user_id: req.user.id,
+        userId: req.user.id,
       },
     });
     if (listSession.length > 1) {

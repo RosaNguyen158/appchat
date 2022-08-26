@@ -10,29 +10,29 @@ import { Message } from "./Message";
 import { React } from "./React";
 import { User } from "./User";
 
-@Entity({ name: "react_message" })
+@Entity({ name: "reactMessages" })
 export class ReactMessage extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @ManyToOne(() => Message, (message) => message.id)
-  @JoinColumn({ name: "message_id" })
+  @ManyToOne(() => Message, (messages) => messages.id)
+  @JoinColumn({ name: "messageId" })
   @Column("text", { nullable: true })
-  message_id = "";
+  messageId = "";
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: "user_id" })
+  @ManyToOne(() => User, (users) => users.id)
+  @JoinColumn({ name: "userId" })
   @Column("text", { nullable: true })
-  member_id = "";
+  memberId = "";
 
-  @ManyToOne(() => React, (react) => react.id)
-  @JoinColumn({ name: "react_id" })
+  @ManyToOne(() => React, (reacts) => reacts.id)
+  @JoinColumn({ name: "reactId" })
   @Column("text", { nullable: true })
-  react_id = "";
+  reactId = "";
 
   @Column("timestamp with time zone")
-  created_at = new Date();
+  createdAt = new Date();
 
   @Column("timestamp with time zone", { nullable: true })
-  updated_at = null;
+  updatedAt = null;
 }

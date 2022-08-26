@@ -10,20 +10,20 @@ import {
 import { ChatRoom } from "./ChatRoom";
 import { User } from "./User";
 
-@Entity({ name: "message" })
+@Entity({ name: "messages" })
 export class Message extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: "sender_id" })
+  @ManyToOne(() => User, (users) => users.id)
+  @JoinColumn({ name: "senderId" })
   @Column("int", { nullable: true })
-  sender_id = null;
+  senderId = null;
 
-  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.id)
-  @JoinColumn({ name: "room_id" })
+  @ManyToOne(() => ChatRoom, (chatrooms) => chatrooms.id)
+  @JoinColumn({ name: "roomId" })
   @Column("int", { nullable: true })
-  room_id = null;
+  roomId = null;
 
   @Column("text", { nullable: true })
   status = "";
@@ -32,14 +32,14 @@ export class Message extends BaseEntity {
   message = "";
 
   @Column("int", { nullable: true })
-  reply_id = 0;
+  replyId = 0;
 
   @Column("int", { nullable: true })
-  forward_id = 0;
+  forwardId = 0;
 
   @Column("timestamp with time zone")
-  created_at = new Date();
+  createdAt = new Date();
 
   @Column("timestamp with time zone", { nullable: true })
-  updated_at = null;
+  updatedAt = null;
 }

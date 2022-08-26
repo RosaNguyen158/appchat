@@ -10,26 +10,26 @@ import { User } from "./User";
 import { ChatRoom } from "./ChatRoom";
 import { Message } from "./Message";
 
-@Entity({ name: "seenby" })
+@Entity({ name: "seenBys" })
 export class SeenBy extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.seenby)
+  @ManyToOne(() => ChatRoom, (chatrooms) => chatrooms.seenBys)
   @JoinColumn()
-  room_id = new ChatRoom();
+  roomId = new ChatRoom();
 
-  @ManyToOne(() => Message, (message) => message.seenby)
+  @ManyToOne(() => Message, (messages) => messages.seenBys)
   @JoinColumn()
-  room_id = new Message();
+  roomId = new Message();
 
-  @ManyToOne(() => User, (user) => user.seenby)
+  @ManyToOne(() => User, (users) => users.seenBys)
   @JoinColumn()
   mem_id = new User();
 
   @Column("timestamp with time zone")
-  created_at = new Date();
+  createdAt = new Date();
 
   @Column("timestamp with time zone", { nullable: true })
-  updated_at = null;
+  updatedAt = null;
 }

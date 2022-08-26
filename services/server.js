@@ -33,7 +33,7 @@ export const chatMessage = async (io, socket, roomId) => {
       );
       const findSender = await ChatController.findMessage(dataParse.messageId);
       await ChatController.addNotice(
-        findSender.sender_id,
+        findSender.senderId,
         `${user.username} reacted to your message.`
       );
     });
@@ -116,7 +116,7 @@ export const directRoom = async (io, socket) => {
     let roomId = "";
     const result = friendDirectRoom.map((i) =>
       userDirectRoom.filter((j) => {
-        if (j.room_id == i.room_id) roomId = i.room_id;
+        if (j.roomId == i.roomId) roomId = i.roomId;
       })
     );
     if (!result.length) {
@@ -131,7 +131,7 @@ export const directRoom = async (io, socket) => {
       socket.join(roomDirect.id);
       socket.emit(
         eventSocket.newMessage,
-        `Joined direct room with ${friend.username}`
+        `Joined direct room with ${friends.username}`
       );
       await ChatController.updateActiveInGroup(user.id, roomDirect.id, true);
       chatMessage(io, socket);
@@ -139,7 +139,7 @@ export const directRoom = async (io, socket) => {
       socket.join(roomId);
       socket.emit(
         eventSocket.newMessage,
-        `Joined direct room with ${friend.username}`
+        `Joined direct room with ${friends.username}`
       );
       await ChatController.updateActiveInGroup(user.id, roomId, true);
       chatMessage(io, socket, roomId);
@@ -162,7 +162,7 @@ export const joinRoom = async (io, socket) => {
     user.id,
     socket.handshake.query.room
   );
-  if (roomInfo.group_types == "public") {
+  if (roomInfo.groupTypes == "public") {
     const newMem = await ChatController.addMember(roomInfo.id, user.id);
     socket.join(roomInfo.id);
     socket.broadcast.emit(
@@ -225,13 +225,13 @@ export const createRoom = async (io, socket) => {
     let members = [];
     let addMemberList = await dataParse.friends.reduce(
       async (memberList, member) => {
-        let check = await checkPrivacyMember(user.id, member.friend_id, socket);
+        let check = await checkPrivacyMember(user.id, member.friendId, socket);
         console.log("check", check);
         if (check) {
           countMember++;
-          members.push(member.friend_id);
+          members.push(member.friendId);
         } else {
-          membersCantAdd.push(member.friend_id);
+          membersCantAdd.push(member.friendId);
         }
         return members;
       },
@@ -299,7 +299,7 @@ export const disconnectUser = async (io, socket) => {
         const userDirectRoom = await ChatController.findMemberDirect(userId);
         const result = friendDirectRoom.map((i) =>
           userDirectRoom.filter((j) => {
-            if (j.room_id == i.room_id) roomId = i.room_id;
+            if (j.roomId == i.roomId) roomId = i.roomId;
           })
         );
         console.log("disconnect room", roomId);
@@ -336,15 +336,15 @@ export const noticeMessage = async (roomId, user) => {
     const findRoom = await ChatController.findRoom(roomId);
     const listMember = await ChatController.getRoomUsers(roomId);
     for (let member of listMember) {
-      if (member.user_id != user.id && member.active_in_group == false) {
+      if (member.userId != user.id && member.activeInGroup == false) {
         if (findRoom.type == "direct") {
           await ChatController.addNotice(
-            member.user_id,
+            member.userId,
             `You have a new message from ${user.username}`
           );
         } else {
           await ChatController.addNotice(
-            member.user_id,
+            member.userId,
             `You have a new message from ${findRoom.title} room`
           );
         }
@@ -361,14 +361,14 @@ const checkPrivacyMember = async (userId, memId, socket) => {
     const infoMember = await ChatController.findUser(memId);
     let userFriend = await AppDataSource.getRepository(Friend).findOne({
       where: {
-        user_id: userId,
-        friend_id: memId,
+        userId: userId,
+        friendId: memId,
       },
     });
-    if (userPrivacy.role_add_to_group == "Everybody") {
+    if (userPrivacy.roleAddToGroup == "Everybody") {
       return true;
     } else if (
-      userPrivacy.role_add_to_group == "My contacts" &&
+      userPrivacy.roleAddToGroup == "My contacts" &&
       userFriend &&
       userFriend.status == "friend"
     ) {

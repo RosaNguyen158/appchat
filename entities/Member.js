@@ -9,33 +9,33 @@ import {
 import { User } from "./User";
 import { ChatRoom } from "./ChatRoom";
 
-@Entity({ name: "member" })
+@Entity({ name: "members" })
 export class Member extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
   @Column("boolean", { default: false })
-  is_admin = false;
+  isAdmin = false;
 
   @Column("boolean", { default: false })
-  is_mute = false;
+  isMute = false;
 
   @Column("boolean", { default: false })
-  active_in_group = false;
+  activeInGroup = false;
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: "user_id" })
+  @ManyToOne(() => User, (users) => users.id)
+  @JoinColumn({ name: "userId" })
   @Column("int", { nullable: true })
-  user_id = null;
+  userId = null;
 
-  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.id)
-  @JoinColumn({ name: "room_id" })
+  @ManyToOne(() => ChatRoom, (chatrooms) => chatrooms.id)
+  @JoinColumn({ name: "roomId" })
   @Column("int", { nullable: true })
-  room_id = null;
+  roomId = null;
 
   @Column("timestamp with time zone")
-  created_at = new Date();
+  createdAt = new Date();
 
   @Column("timestamp with time zone", { nullable: true })
-  updated_at = null;
+  updatedAt = null;
 }

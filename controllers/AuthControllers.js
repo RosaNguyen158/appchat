@@ -42,12 +42,12 @@ export const register = async (req, res, next) => {
     await AppDataSource.manager.save(user);
 
     const userSetting = new Setting();
-    userSetting.user_id = user.id;
+    userSetting.userId = user.id;
     await AppDataSource.manager.save(userSetting);
     console.log(user.id);
 
     //send Temp token
-    user.temp_token = jwt.sign({ username }, user.refresh_secret_key);
+    user.tempToken = jwt.sign({ username }, user.refreshSecretKey);
     await AppDataSource.manager.save(user, (err, user) => {
       if (err) {
         return res.json({
@@ -58,7 +58,7 @@ export const register = async (req, res, next) => {
     await sendOTPVerificationEmail(user);
     return res.json({
       message: "Sending OTP to your email",
-      temp_token: user.temp_token,
+      tempToken: user.tempToken,
     });
   } catch (error) {
     return res.json({ message: error.message });
@@ -68,11 +68,11 @@ export const register = async (req, res, next) => {
 export const verifyOTPEmail = async (req, res, next) => {
   try {
     const otp = req.body.otp;
-    const temp_token = req.headers["authorization"];
-    console.log("temp_token", temp_token);
+    const tempToken = req.headers["authorization"];
+    console.log("tempToken", tempToken);
     let user = await AppDataSource.getRepository(User).findOne({
       where: {
-        temp_token: temp_token,
+        tempToken: tempToken,
       },
     });
     console.log(user);
@@ -82,14 +82,14 @@ export const verifyOTPEmail = async (req, res, next) => {
     if (!otp) {
       return res.json("FAIL OTP");
     } else {
-      let hashedOTP = user.otp_email;
+      let hashedOTP = user.otpEmail;
       console.log(hashedOTP);
       const validOTP = await bycrypt.compare(`${otp}`, hashedOTP);
       if (!validOTP) {
         res.json("FAILED VERIFY OTP");
       } else {
-        user.temp_token = null;
-        user.otp_email = null;
+        user.tempToken = null;
+        user.otpEmail = null;
         await AppDataSource.manager.save(user);
         const userSession = await createSession(req, user);
         return res.json({
@@ -116,28 +116,28 @@ export const login = async (req, res, next) => {
       },
     });
     if (!user) {
-      return res.json({ message: "Username or password incorrect" });
+      return res.json({ message: "Username or password is incorrect" });
     }
     const validPassword = await bycrypt.compare(password, user.password);
     if (!validPassword) {
-      return res.json({ message: "Invalid Password" });
+      return res.json({ message: "Username or password is incorrect" });
     }
     const userSetting = await AppDataSource.getRepository(Setting).findOne({
       where: {
-        user_id: user.id,
+        userId: user.id,
       },
     });
-    if (userSetting.two_step_verification) {
-      user.temp_token = jwt.sign({ username }, user.refresh_secret_key);
+    if (userSetting.twoStepVerification) {
+      user.tempToken = jwt.sign({ username }, user.refreshSecretKey);
       await AppDataSource.manager.save(user, (err, user) => {
         if (err) {
           return res.json({
-            message: "Error to create temporary token",
+            message: "Login Error",
           });
         }
       });
       return res.json({
-        temp_token: user.temp_token,
+        tempToken: user.tempToken,
       });
     } else {
       const userSession = await createSession(req, user);
@@ -153,21 +153,21 @@ export const login = async (req, res, next) => {
 
 export const verifyToLogin = async (req, res) => {
   try {
-    const temp_token = req.headers["authorization"];
-    console.log("temp_token", temp_token);
+    const tempToken = req.headers["authorization"];
+    console.log("tempToken", tempToken);
     let user = await AppDataSource.getRepository(User).findOne({
       where: {
-        temp_token: temp_token,
+        tempToken: tempToken,
       },
     });
     console.log(user);
     if (!user) {
-      return res.json({ message: "Temp token is not found" });
+      return res.json({ message: "Error" });
     } else {
       let otp = req.body.otp;
-      let secret = user.secret_2FA;
+      let secret = user.secret2FA;
       console.log(user);
-      user.temp_token = null;
+      user.tempToken = null;
       await AppDataSource.manager.save(user);
       console.log(otp, secret);
       if (!otp) {
@@ -176,7 +176,7 @@ export const verifyToLogin = async (req, res) => {
         const validOTP = authenticator.check(otp, secret);
         console.log(validOTP);
         if (!validOTP) {
-          res.json("FAILED VERIFY OTP");
+          res.json({ message: "Login Failed" });
         } else {
           const userSession = await createSession(req, user);
           if (!userSession) {
@@ -208,28 +208,29 @@ export const twoFAEnable = async (req, res) => {
         username: username,
       },
     });
-    console.log(user, req.user.id);
     if (!user) {
       return res.json({
-        send: "User account does not exist",
+        message: "Username or password is incorrect",
         token: req.token,
       });
     } else if (user.id != req.user.id) {
       return res.json({
-        send: "User account is incorrect",
+        message: "Username or password is incorrect",
         token: req.token,
       });
     } else {
-      console.log("twoFAEnable", user);
       const validPassword = await bycrypt.compare(password, req.user.password);
       console.log(validPassword);
       if (!validPassword) {
-        return res.json({ message: "Invalid Password", token: req.token });
+        return res.json({
+          message: "Username or password is incorrect",
+          token: req.token,
+        });
       }
       const secret = authenticator.generateSecret();
-      user.secret_2FA = secret;
+      user.secret2FA = secret;
       await AppDataSource.manager.save(user);
-      const otp = authenticator.generate(user.secret_2FA);
+      const otp = authenticator.generate(user.secret2FA);
       const otpauth = authenticator.keyuri(user.username, "App Chat", secret);
       qrcode.toDataURL(otpauth, (err, imageUrl) => {
         if (err) {
@@ -258,21 +259,21 @@ export const verifyToEnable = async (req, res, next) => {
     });
     const userSetting = await AppDataSource.getRepository(Setting).findOne({
       where: {
-        user_id: findUser.id,
+        userId: findUser.id,
       },
     });
     if (!otp) {
       return res.json({ message: "Fail!", token: req.token });
     } else {
-      let secret_2FA = findUser.secret_2FA;
-      const validOTP = authenticator.check(otp, secret_2FA);
+      let secret2FA = findUser.secret2FA;
+      const validOTP = authenticator.check(otp, secret2FA);
       if (!validOTP) {
         return res.json({ message: "OTP is incorrect", token: req.token });
       } else {
-        let recovery = makeid(6);
+        let recovery = makeid(15);
         findUser.recovery = recovery;
         await AppDataSource.manager.save(findUser);
-        userSetting.two_step_verification = true;
+        userSetting.twoStepVerification = true;
         await AppDataSource.manager.save(userSetting, (err, user) => {
           if (err) {
             return res.json({
@@ -298,11 +299,11 @@ export const verifyToEnable = async (req, res, next) => {
 };
 
 export const loginRecovery = async (req, res) => {
-  const temp_token = req.headers["authorization"];
-  console.log("temp_token", temp_token);
+  const tempToken = req.headers["authorization"];
+  console.log("tempToken", tempToken);
   let user = await AppDataSource.getRepository(User).findOne({
     where: {
-      temp_token: temp_token,
+      tempToken: tempToken,
     },
   });
   if (!user) {
@@ -320,13 +321,13 @@ export const loginRecovery = async (req, res) => {
   } else {
     let userSetting = await AppDataSource.getRepository(Setting).findOne({
       where: {
-        user_id: user.id,
+        userId: user.id,
       },
     });
-    userSetting.two_step_verification = false;
+    userSetting.twoStepVerification = false;
     user.recovery = null;
-    user.temp_token = null;
-    user.secret_2FA = null;
+    user.tempToken = null;
+    user.secret2FA = null;
     await AppDataSource.manager.save(user);
     await AppDataSource.manager.save(userSetting);
     const userSession = await createSession(req, user);
@@ -343,16 +344,16 @@ export const loginRecovery = async (req, res) => {
 };
 
 export const resetPassword = async (req, res) => {
-  const temp_token = req.headers["authorization"];
+  const tempToken = req.headers["authorization"];
   let user = await AppDataSource.getRepository(User).findOne({
     where: {
-      temp_token: temp_token,
+      tempToken: tempToken,
     },
   });
   if (user) {
-    user.temp_token = null;
+    user.tempToken = null;
     user.password = await hashKey(req.body.password);
-    user.secret_2FA = null;
+    user.secret2FA = null;
     await AppDataSource.manager.save(user, (err, user) => {
       if (err) {
         return res.json({
@@ -362,10 +363,10 @@ export const resetPassword = async (req, res) => {
     });
     const userSetting = await AppDataSource.getRepository(Setting).findOne({
       where: {
-        user_id: user.id,
+        userId: user.id,
       },
     });
-    userSetting.two_step_verification = false;
+    userSetting.twoStepVerification = false;
     await AppDataSource.manager.save(userSetting, (err, user) => {
       if (err) {
         return res.json({
@@ -390,7 +391,7 @@ export const logout = async (req, res) => {
         token: token,
       },
     });
-    user_session.refresh_token = null;
+    user_session.refreshToken = null;
     user_session.token = null;
     await AppDataSource.manager.save(user_session);
     res.json({ message: "Success Logout" });
@@ -401,27 +402,24 @@ export const logout = async (req, res) => {
 
 export const createSession = async (req, user) => {
   try {
-    const { username, password } = user;
-    console.log(username, password);
-    user.is_active = true;
+    user.isActive = true;
     const tokens = generateTokens(user);
     const user_session = new Session();
     user_session.token = tokens.accessToken;
-    user_session.refresh_token = tokens.refreshToken;
-    user_session.user_id = user.id;
+    user_session.refreshToken = tokens.refreshToken;
+    user_session.userId = user.id;
     user_session.agent_info = req.headers["user-agent"];
     const geo = geoip.lookup("222.253.42.176");
     user_session.location = geo.country;
-    user_session.ip_address = req.ip;
+    user_session.ipAddress = req.ip;
     const agent_info = UAParser(
       "Mozilla/5.0 (iPad; CPU OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/87.0.4280.77 Mobile/15E148 Safari/604.1"
     );
-    user_session.agent_os = agent_info.os.name;
-    user_session.agent_browser = agent_info.browser.name;
-    user_session.device_name = agent_info.device.vendor;
+    user_session.agentOs = agent_info.os.name;
+    user_session.agentBrowser = agent_info.browser.name;
+    user_session.deviceName = agent_info.device.vendor;
     await AppDataSource.manager.save(user_session);
     await AppDataSource.manager.save(user);
-    console.log(user_session);
     return user_session;
   } catch (error) {
     console.log(error);

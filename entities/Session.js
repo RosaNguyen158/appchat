@@ -9,48 +9,48 @@ import {
 } from "typeorm";
 import { User } from "./User";
 
-@Entity({ name: "session" })
+@Entity({ name: "sessions" })
 export class Session extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @ManyToOne((user_id) => User, (user) => user.id)
-  @JoinColumn({ name: "user_id" })
+  @ManyToOne((userId) => User, (users) => users.id)
+  @JoinColumn({ name: "userId" })
   @Column("int")
-  user_id = 0;
+  userId = 0;
 
   @Column("text", { nullable: true })
-  device_name = null;
+  deviceName = null;
 
   @Column("text", { nullable: true })
-  agent_os = null;
+  agentOs = null;
 
   @Column("text", { nullable: true })
-  agent_browser = null;
+  agentBrowser = null;
 
   @Column("text", { nullable: true })
-  app_version = null;
+  appVersion = null;
 
   @Column("text", { nullable: true })
   location = null;
 
   @Column("text", { nullable: true })
-  ip_address = null;
+  ipAddress = null;
 
   @Column("text", { nullable: true })
   token = "";
 
   @Column("text", { nullable: true })
-  refresh_token = "";
+  refreshToken = "";
 
   @Column("timestamp with time zone", { nullable: true })
-  last_active = null;
+  lastActive = null;
 
   // @JoinColumn("numberic", { nullable: true })
   // userId = null;
   @Column("timestamp with time zone")
-  created_at = new Date();
+  createdAt = new Date();
 
   @Column("timestamp with time zone", { nullable: true })
-  updated_at = null;
+  updatedAt = null;
 }

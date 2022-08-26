@@ -17,32 +17,27 @@ export const RefreshToken = async (req, res, next) => {
     console.log("user_session", user_session);
     let user = await AppDataSource.getRepository(User).findOne({
       where: {
-        id: user_session.user_id,
+        id: user_session.userId,
       },
     });
     console.log(user);
     if (!token) {
       console.log("error");
     } else {
-      jwt.verify(token, user.secret_key, async (err) => {
+      jwt.verify(token, user.secretKey, async (err) => {
         if (err) {
-          console.log("CHECK REFRESHTOKEN");
           jwt.verify(
-            user_session.refresh_token,
-            user.refresh_secret_key,
+            user_session.refreshToken,
+            user.refreshSecretKey,
             async (err, data) => {
               if (!err) {
-                console.log("REFRESHTOKEN");
                 const tokens = generateTokens(user);
                 user_session.token = tokens.accessToken;
-                user_session.refresh_token = tokens.refreshToken;
+                user_session.refreshToken = tokens.refreshToken;
                 await AppDataSource.manager.save(user_session);
                 console.log(user_session);
                 req.user = user;
                 req.session = user_session.id;
-                // res.json({
-                //   token: tokens.accessToken,
-                // });
               } else {
                 return;
               }

@@ -1,6 +1,6 @@
 import { Entity, Column, BaseEntity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity({ name: "react" })
+@Entity({ name: "reacts" })
 export class React extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
@@ -12,8 +12,8 @@ export class React extends BaseEntity {
   // simpleEnum: string
 
   @Column("timestamp with time zone")
-  created_at = new Date();
+  createdAt = new Date();
 
   @Column("timestamp with time zone", { nullable: true })
-  updated_at = null;
+  updatedAt = null;
 }

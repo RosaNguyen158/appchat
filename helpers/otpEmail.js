@@ -16,7 +16,6 @@ let transporter = nodemailer.createTransport({
 
 export const sendOTPVerificationEmail = async (user) => {
   const otp = makeid(4);
-  console.log("sendOTPVerificationEmail", user.email);
   try {
     const mailOptions = {
       from: "19521550@gm.uit.edu.vn",
@@ -29,12 +28,10 @@ export const sendOTPVerificationEmail = async (user) => {
 
     const saltRounds = 10;
     let hashedOTP = await bycrypt.hash(otp, saltRounds);
-    console.log("hashedOTP 1", hashedOTP);
     let updated = await AppDataSource.getRepository(User).update(
       { id: user.id },
-      { otp_email: hashedOTP }
+      { otpEmail: hashedOTP }
     );
-    console.log(updated);
     return transporter.sendMail(mailOptions);
   } catch (error) {
     console.log(error);

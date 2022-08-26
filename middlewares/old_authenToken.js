@@ -34,10 +34,10 @@ export const RefreshToken = async (req, res, next) => {
     console.log("user_session authenToken", user_session);
     let findUser = await AppDataSource.getRepository(User).findOne({
       where: {
-        id: user_session.user_id,
+        id: user_session.userId,
       },
     });
-    jwt.verify(req.session.refreshToken, findUser.refresh_secret_key);
+    jwt.verify(req.session.refreshToken, findUser.refreshSecretKey);
     const tokens = generateTokens(findUser);
     user_session.token = tokens.accessToken;
     await AppDataSource.manager.save(user_session);

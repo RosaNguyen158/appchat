@@ -11,7 +11,7 @@ import { Setting } from "@/entities/Setting";
 export const joinRoom = async (userid, room) => {
   const mem = new Member();
   mem.mem_id = userid;
-  mem.room_id = room;
+  mem.roomId = room;
   await AppDataSource.manager.save(mem);
   return mem;
 };
@@ -19,7 +19,7 @@ export const joinRoom = async (userid, room) => {
 export const getRoomUsers = async (room) => {
   let mems = await AppDataSource.getRepository(Member).find({
     where: {
-      room_id: room,
+      roomId: room,
     },
   });
   return mems;
@@ -34,10 +34,10 @@ export const insertMessage = async (
 ) => {
   let mess = new Message();
   mess.message = message;
-  mess.reply_id = messReply;
-  mess.forward_id = messFwd;
-  mess.sender_id = sender;
-  mess.room_id = room;
+  mess.replyId = messReply;
+  mess.forwardId = messFwd;
+  mess.senderId = sender;
+  mess.roomId = room;
   await AppDataSource.manager.save(mess);
   return mess;
 };
@@ -47,8 +47,8 @@ export const createRoomChat = async (roomName, type, groupTypes, codeGroup) => {
     let room = new ChatRoom();
     room.title = roomName;
     room.type = type;
-    room.group_types = groupTypes;
-    room.code_gr = codeGroup;
+    room.groupTypes = groupTypes;
+    room.codeGroup = codeGroup;
     await AppDataSource.manager.save(room);
     return room;
   } catch (error) {
@@ -59,8 +59,8 @@ export const createRoomChat = async (roomName, type, groupTypes, codeGroup) => {
 
 export const addMember = async (roomId, memId) => {
   let member = new Member();
-  member.room_id = roomId;
-  member.user_id = memId;
+  member.roomId = roomId;
+  member.userId = memId;
   await AppDataSource.manager.save(member);
   return member;
 };
@@ -77,19 +77,19 @@ export const findUser = async (userId) => {
 export const findMember = async (userId, roomId) => {
   const user = await AppDataSource.getRepository(Member).findOne({
     where: {
-      user_id: userId,
-      room_id: roomId,
+      userId: userId,
+      roomId: roomId,
     },
   });
   return user;
 };
 export const findMemberDirect = async (userId) => {
   const user = await AppDataSource.getRepository(Member)
-    .createQueryBuilder("member")
-    .innerJoin("member.room_id", "chatroom")
-    .where("chatroom.type = :name and member.user_id = :user_id", {
+    .createQueryBuilder("members")
+    .innerJoin("members.roomId", "chatrooms")
+    .where("chatrooms.type = :name and members.userId = :userId", {
       name: "direct",
-      user_id: userId,
+      userId: userId,
     })
     .getMany();
 
@@ -117,7 +117,7 @@ export const findRoom = async (room) => {
 export const checkCode = async (codeGr) => {
   const roomcheck = await AppDataSource.getRepository(ChatRoom).findOne({
     where: {
-      code_gr: codeGr,
+      codeGroup: codeGr,
     },
   });
   return roomcheck;
@@ -126,7 +126,7 @@ export const checkCode = async (codeGr) => {
 export const userPrivacy = async (userId) => {
   const userPrivacy = await AppDataSource.getRepository(Setting).findOne({
     where: {
-      user_id: userId,
+      userId: userId,
     },
   });
   return userPrivacy;
@@ -135,8 +135,8 @@ export const userPrivacy = async (userId) => {
 export const updateMute = async (userId) => {
   const updateMember = await AppDataSource.getRepository(Member).findOne({
     where: {
-      user_id: userId,
-      is_mute: true,
+      userId: userId,
+      isMute: true,
     },
   });
   return updateMember;
@@ -145,7 +145,7 @@ export const updateMute = async (userId) => {
 export const updateActive = async (userId) => {
   const updateSession = await AppDataSource.getRepository(Session).findOne({
     where: {
-      user_id: userId,
+      userId: userId,
     },
   });
   const updateActive = await AppDataSource.getRepository(User).findOne({
@@ -153,19 +153,19 @@ export const updateActive = async (userId) => {
       id: userId,
     },
   });
-  updateActive.is_active = false;
-  updateActive.last_seen = new Date();
+  updateActive.isActive = false;
+  updateActive.lastSeen = new Date();
   await AppDataSource.manager.save(updateActive);
   let activeTime = new Date();
   console.log("Date", activeTime);
-  updateSession.last_active = activeTime;
+  updateSession.lastActive = activeTime;
   await AppDataSource.manager.save(updateSession);
   return updateSession;
 };
 
 export const addNotice = async (userId, content) => {
   const userNotice = new Notification();
-  userNotice.user_id = userId;
+  userNotice.userId = userId;
   userNotice.content = content;
   userNotice.is_read = false;
   await AppDataSource.manager.save(userNotice);
@@ -175,7 +175,7 @@ export const addNotice = async (userId, content) => {
 export const updateNotice = async (userId, content) => {
   const updateNoice = await AppDataSource.getRepository(Notification).findOne({
     where: {
-      user_id: userId,
+      userId: userId,
     },
   });
   updateNoice.content = content;
@@ -184,9 +184,9 @@ export const updateNotice = async (userId, content) => {
 
 export const reactMessage = async (messageId, userId, reactId) => {
   const reactMess = new ReactMessage();
-  reactMess.message_id = messageId;
-  reactMess.member_id = userId;
-  reactMess.react_id = reactId;
+  reactMess.messageId = messageId;
+  reactMess.memberId = userId;
+  reactMess.reactId = reactId;
   await AppDataSource.manager.save(reactMess);
   return reactMess;
 };
@@ -194,8 +194,8 @@ export const reactMessage = async (messageId, userId, reactId) => {
 export const updateActiveInGroup = async (userId, roomId, status) => {
   const activeMember = await AppDataSource.getRepository(Member).findOne({
     where: {
-      user_id: userId,
-      room_id: roomId,
+      userId: userId,
+      roomId: roomId,
     },
   });
   if (status) {
@@ -207,11 +207,11 @@ export const updateActiveInGroup = async (userId, roomId, status) => {
     if (!activeMember) {
       return false;
     }
-    updateActive.is_active = true;
-    updateActive.last_seen = new Date();
+    updateActive.isActive = true;
+    updateActive.lastSeen = new Date();
     await AppDataSource.manager.save(updateActive);
   }
-  activeMember.active_in_group = status;
+  activeMember.activeInGroup = status;
   await AppDataSource.manager.save(activeMember);
   console.log("Active in group");
   return activeMember;
