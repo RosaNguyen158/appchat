@@ -1,13 +1,14 @@
 import {
-  Entity,
-  Column,
   BaseEntity,
-  PrimaryGeneratedColumn,
+  Column,
+  Entity,
   JoinColumn,
   ManyToOne,
+  PrimaryGeneratedColumn,
 } from "typeorm";
-import { User } from "./User";
+
 import { ChatRoom } from "./ChatRoom";
+import { User } from "./User";
 
 @Entity({ name: "members" })
 export class Member extends BaseEntity {

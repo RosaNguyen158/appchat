@@ -1,11 +1,12 @@
 import {
-  Entity,
-  Column,
   BaseEntity,
-  PrimaryGeneratedColumn,
+  Column,
+  Entity,
   JoinColumn,
   ManyToOne,
+  PrimaryGeneratedColumn,
 } from "typeorm";
+
 import { User } from "./User";
 
 @Entity({ name: "friends" })

@@ -1,10 +1,10 @@
-import jwt from "jsonwebtoken";
-import { AppDataSource } from "@/app.js";
-import { Session } from "../entities/Session";
-import { User } from "../entities/User";
-import { generateTokens } from "@/helpers/generateToken";
-import { updateRefreshToken } from "@/helpers/generateToken";
-import { atob } from "atob";
+import jwt from 'jsonwebtoken'
+
+import { AppDataSource } from '@/app.js'
+import { generateTokens } from '@/helpers/generateToken'
+
+import { Session } from '../entities/Session'
+import { User } from '../entities/User'
 
 // export function authenToken(req, res, next) {
 //   const authorizationHeader = req.headers["authorization"];
@@ -19,30 +19,24 @@ import { atob } from "atob";
 // }
 
 export const RefreshToken = async (req, res, next) => {
-  console.log("Middleware REFRESHTOKEN");
-  const user_session = await AppDataSource.getRepository(Session).findOne({
-    where: {
-      token: req.session.token,
-    },
-  });
-  let token = req.session.token;
-  console.log("Token", token);
-  console.log("RefreshToken", req.session.refreshToken);
-  const jwtPayload = JSON.parse(atob(token.split(".")[1]));
-  console.log("jwtPayload authenToken", jwtPayload);
-  if (!token) {
-    console.log("user_session authenToken", user_session);
-    let findUser = await AppDataSource.getRepository(User).findOne({
-      where: {
-        id: user_session.userId,
-      },
-    });
-    jwt.verify(req.session.refreshToken, findUser.refreshSecretKey);
-    const tokens = generateTokens(findUser);
-    user_session.token = tokens.accessToken;
-    await AppDataSource.manager.save(user_session);
-    next();
-  } else {
-    next();
-  }
-};
+    const user_session = await AppDataSource.getRepository(Session).findOne({
+        where: {
+            token: req.session.token,
+        },
+    })
+    let token = req.session.token
+    if (!token) {
+        let findUser = await AppDataSource.getRepository(User).findOne({
+            where: {
+                id: user_session.userId,
+            },
+        })
+        jwt.verify(req.session.refreshToken, findUser.refreshSecretKey)
+        const tokens = generateTokens(findUser)
+        user_session.token = tokens.accessToken
+        await AppDataSource.manager.save(user_session)
+        next()
+    } else {
+        next()
+    }
+}

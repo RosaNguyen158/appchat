@@ -1,0 +1,19 @@
+{
+    "env": {
+        "node": true,
+        "es2021": true
+    },
+    "extends": ["eslint:recommended", "prettier"],
+    "plugins": ["simple-import-sort"],
+    "overrides": [],
+    "parser": "@babel/eslint-parser",
+    "parserOptions": {
+        "ecmaVersion": 8,
+        "sourceType": "module",
+        "allowImportExportEverywhere": true
+    },
+    "rules": {
+        "simple-import-sort/imports": "error",
+        "simple-import-sort/exports": "error"
+    }
+}
