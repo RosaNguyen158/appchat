@@ -1,34 +1,35 @@
 import {
-  Entity,
-  Column,
   BaseEntity,
-  PrimaryGeneratedColumn,
+  Column,
+  Entity,
   JoinColumn,
   ManyToOne,
+  PrimaryGeneratedColumn,
 } from "typeorm";
+
 import { User } from "./User";
 
-@Entity({ name: "friend" })
+@Entity({ name: "friends" })
 export class Friend extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: "user_id" })
-  @Column("text")
-  user_id = "";
+  @ManyToOne(() => User, (users) => users.id)
+  @JoinColumn({ name: "userId" })
+  @Column("text", { nullable: true })
+  userId = "";
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: "friend_id" })
-  @Column("text")
-  friend_id = "";
+  @ManyToOne(() => User, (users) => users.id)
+  @JoinColumn({ name: "friendId" })
+  @Column("text", { nullable: true })
+  friendId = "";
 
   @Column("text")
   status = "";
 
   @Column("timestamp with time zone")
-  created_at = new Date();
+  createdAt = new Date();
 
   @Column("timestamp with time zone", { nullable: true })
-  updated_at = null;
+  updatedAt = null;
 }

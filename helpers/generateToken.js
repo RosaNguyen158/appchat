@@ -1,17 +1,17 @@
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv"; // de su dung cac bien trong .env
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 
 export const generateTokens = (payload) => {
-  const { id, username, secret_key, refresh_secret_key } = payload;
+  const { id, username, secretKey, refreshSecretKey } = payload;
 
   // Create JWT
-  const accessToken = jwt.sign({ id, username }, secret_key, {
-    expiresIn: "3s",
+  const accessToken = jwt.sign({ id, username }, secretKey, {
+    expiresIn: "5m",
   });
 
-  const refreshToken = jwt.sign({ id, username }, refresh_secret_key, {
+  const refreshToken = jwt.sign({ id, username }, refreshSecretKey, {
     expiresIn: "1h",
   });
   return { accessToken, refreshToken };

@@ -1,35 +1,36 @@
 import {
-  Entity,
-  Column,
-  BaseEntity,
-  PrimaryGeneratedColumn,
-  JoinColumn,
-  ManyToOne,
-} from "typeorm";
-import { User } from "./User";
-import { ChatRoom } from "./ChatRoom";
-import { Message } from "./Message";
+    BaseEntity,
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+} from 'typeorm'
 
-@Entity({ name: "seenby" })
+import { ChatRoom } from './ChatRoom'
+import { Message } from './Message'
+import { User } from './User'
+
+@Entity({ name: 'seenBys' })
 export class SeenBy extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  id = new Number();
+    @PrimaryGeneratedColumn()
+    id = new Number()
 
-  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.seenby)
-  @JoinColumn()
-  room_id = new ChatRoom();
+    @ManyToOne(() => ChatRoom, (chatrooms) => chatrooms.seenBys)
+    @JoinColumn()
+    roomId = new ChatRoom()
 
-  @ManyToOne(() => Message, (message) => message.seenby)
-  @JoinColumn()
-  room_id = new Message();
+    @ManyToOne(() => Message, (messages) => messages.seenBys)
+    @JoinColumn()
+    messagesId = new Message()
 
-  @ManyToOne(() => User, (user) => user.seenby)
-  @JoinColumn()
-  mem_id = new User();
+    @ManyToOne(() => User, (users) => users.seenBys)
+    @JoinColumn()
+    mem_id = new User()
 
-  @Column("timestamp with time zone")
-  created_at = new Date();
+    @Column('timestamp with time zone')
+    createdAt = new Date()
 
-  @Column("timestamp with time zone")
-  updated_at = new Date();
+    @Column('timestamp with time zone', { nullable: true })
+    updatedAt = null
 }

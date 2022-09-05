@@ -1,22 +1,23 @@
 import {
-  Entity,
-  Column,
   BaseEntity,
-  PrimaryGeneratedColumn,
+  Column,
+  Entity,
   JoinColumn,
   ManyToOne,
+  PrimaryGeneratedColumn,
 } from "typeorm";
+
 import { User } from "./User";
 
-@Entity({ name: "notification" })
+@Entity({ name: "notifications" })
 export class Notification extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: "user_id" })
+  @ManyToOne(() => User, (users) => users.id)
+  @JoinColumn({ name: "userId" })
   @Column("int")
-  user_id = 0;
+  userId = 0;
 
   @Column("boolean", { nullable: true })
   is_read = false;
@@ -25,8 +26,8 @@ export class Notification extends BaseEntity {
   content = 0;
 
   @Column("timestamp with time zone")
-  created_at = new Date();
+  createdAt = new Date();
 
   @Column("timestamp with time zone")
-  updated_at = new Date();
+  updatedAt = new Date();
 }

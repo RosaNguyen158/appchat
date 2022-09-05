@@ -1,56 +1,57 @@
 import {
-  Entity,
-  Column,
   BaseEntity,
-  PrimaryGeneratedColumn,
+  Column,
+  Entity,
   JoinColumn,
   OneToOne,
+  PrimaryGeneratedColumn,
 } from "typeorm";
+
 import { User } from "./User";
 
-@Entity({ name: "setting" })
+@Entity({ name: "settings" })
 export class Setting extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @OneToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: "user_id" })
+  @OneToOne(() => User, (users) => users.id)
+  @JoinColumn({ name: "userId" })
   @Column("int")
-  user_id = 0;
+  userId = 0;
 
   @Column("enum", {
     enum: ["Everybody", "My contacts", "Nobody"],
     default: "Everybody",
   })
-  role_phone_seenby = "Everybody";
+  rolePhoneSeenby = "Everybody";
 
   @Column("enum", {
     enum: ["Everybody", "My contacts", "Nobody"],
     default: "Everybody",
   })
-  role_lastseen = "Everybody";
+  roleLastseen = "Everybody";
 
   @Column("enum", {
     enum: ["Everybody", "My contacts"],
     default: "Everybody",
   })
-  role_add_to_group = "Everybody";
+  roleAddToGroup = "Everybody";
 
   @Column("enum", {
     enum: ["Everybody", "My contacts", "Nobody"],
     default: "Everybody",
   })
-  link_in_fwd = "Everybody";
+  linkInFwd = "Everybody";
 
   @Column("boolean", { default: false })
-  active_in_group = false;
+  activeInGroup = false;
 
   @Column("boolean", { default: false })
-  two_step_verification = false;
+  twoStepVerification = false;
 
   @Column("timestamp with time zone")
-  created_at = new Date();
+  createdAt = new Date();
 
   @Column("timestamp with time zone", { nullable: true })
-  updated_at = null;
+  updatedAt = null;
 }

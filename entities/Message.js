@@ -1,45 +1,45 @@
 import {
-  Entity,
-  Column,
-  BaseEntity,
-  PrimaryGeneratedColumn,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-} from "typeorm";
-import { ChatRoom } from "./ChatRoom";
-import { User } from "./User";
+    BaseEntity,
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+} from 'typeorm'
 
-@Entity({ name: "message" })
+import { ChatRoom } from './ChatRoom'
+import { User } from './User'
+
+@Entity({ name: 'messages' })
 export class Message extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  id = new Number();
+    @PrimaryGeneratedColumn()
+    id = new Number()
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({ name: "sender_id" })
-  @Column("int", { nullable: true })
-  sender_id = null;
+    @ManyToOne(() => User, (users) => users.id)
+    @JoinColumn({ name: 'senderId' })
+    @Column('int', { nullable: true })
+    senderId = null
 
-  @ManyToOne(() => ChatRoom, (chatroom) => chatroom.id)
-  @JoinColumn({ name: "room_id" })
-  @Column("int", { nullable: true })
-  room_id = null;
+    @ManyToOne(() => ChatRoom, (chatrooms) => chatrooms.id)
+    @JoinColumn({ name: 'roomId' })
+    @Column('int', { nullable: true })
+    roomId = null
 
-  @Column("text", { nullable: true })
-  status = "";
+    @Column('text', { nullable: true })
+    status = ''
 
-  @Column("text")
-  message = "";
+    @Column('text')
+    message = ''
 
-  @Column("int", { nullable: true })
-  reply_id = 0;
+    @Column('int', { nullable: true })
+    replyId = 0
 
-  @Column("int", { nullable: true })
-  forward_id = 0;
+    @Column('int', { nullable: true })
+    forwardId = 0
 
-  @Column("timestamp with time zone")
-  created_at = new Date();
+    @Column('timestamp with time zone')
+    createdAt = new Date()
 
-  @Column("timestamp with time zone")
-  updated_at = new Date();
+    @Column('timestamp with time zone', { nullable: true })
+    updatedAt = null
 }

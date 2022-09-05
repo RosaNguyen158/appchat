@@ -1,4 +1,5 @@
 import express from "express";
+
 import authRouter from "@/routes/authRoutes";
 import homeRouter from "@/routes/homeRoutes";
 

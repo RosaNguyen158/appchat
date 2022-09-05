@@ -1,14 +1,7 @@
-import {
-  Entity,
-  Column,
-  BaseEntity,
-  PrimaryColumn,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  EntitySchema,
-} from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+
 import { makeid } from "../helpers/generateKey";
-@Entity({ name: "user" })
+@Entity({ name: "users" })
 export class User {
   @PrimaryGeneratedColumn()
   id = new Number();
@@ -23,40 +16,43 @@ export class User {
   email = "";
 
   @Column("text", { nullable: true })
-  first_name = "";
+  firstName = "";
 
   @Column("text", { nullable: true })
-  last_name = "";
+  lastName = "";
 
   @Column("text", { nullable: true })
-  avartar_img = "";
+  avartarImg = "";
 
   @Column("text")
-  secret_key = makeid(4);
+  secretKey = makeid(4);
 
   @Column("text")
-  refresh_secret_key = makeid(4);
+  refreshSecretKey = makeid(4);
 
   @Column("text", { nullable: true })
-  temp_token = "";
+  tempToken = "";
 
   @Column("text", { nullable: true })
-  secret_2FA = "";
+  otpEmail = "";
+
+  @Column("text", { nullable: true })
+  secret2FA = "";
 
   @Column("text", { nullable: true })
   recovery = "";
 
   @Column("boolean")
-  is_active = false;
+  isActive = false;
 
   @Column("timestamp with time zone", { nullable: true })
-  last_seen = null;
+  lastSeen = null;
 
   @Column("timestamp with time zone")
-  created_at = new Date();
+  createdAt = new Date();
 
   @Column("timestamp with time zone")
-  updated_at = new Date();
+  updatedAt = new Date();
 }
 
 // module.exports = {

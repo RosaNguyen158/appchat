@@ -1,210 +1,402 @@
-import { AppDataSource } from "@/app.js";
-import { ChatRoom } from "@/entities/ChatRoom";
-import { Member } from "@/entities/Member";
-import { Message } from "@/entities/Message";
-import { User } from "@/entities/User";
-import { Session } from "@/entities/Session";
-import { Notification } from "@/entities/Notification";
-import { ReactMessage } from "@/entities/ReactMessage";
-import { Setting } from "@/entities/Setting";
+import { AppDataSource } from '@/app.js'
+import { Friend } from '@/entities/Friend'
+import { makeid } from '@/helpers/generateKey'
+import * as socketServices from '@/services/socketServices'
+import * as eventSocket from '@/socketConstants'
 
-export const joinRoom = async (userid, room) => {
-  const mem = new Member();
-  mem.mem_id = userid;
-  mem.room_id = room;
-  await AppDataSource.manager.save(mem);
-  return mem;
-};
+export const chatMessage = async (io, socket, roomId) => {
+    try {
+        const user = await socketServices.findUser(socket.handshake.headers.id)
+        socket.on(eventSocket.chatMessage, async (message) => {
+            socket.emit('sending', 'sending')
+            await socketServices.insertMessage(message, user.id, roomId)
+            await socket.broadcast.emit(eventSocket.chatMessage, {
+                message: message,
+                username: user.username,
+            })
+        })
 
-export const getRoomUsers = async (room) => {
-  let mems = await AppDataSource.getRepository(Member).find({
-    where: {
-      room_id: room,
-    },
-  });
-  return mems;
-};
+        // React Message: data {reactId, messageId}
+        socket.on(eventSocket.react, async (data) => {
+            const dataParse = JSON.parse(JSON.stringify(data))
+            console.log('dataParse', dataParse)
+            await socketServices.reactMessage(
+                dataParse.messageId,
+                user.id,
+                dataParse.reactId
+            )
+            const findSender = await socketServices.findMessage(
+                dataParse.messageId
+            )
+            await socketServices.addNotice(
+                findSender.senderId,
+                `${user.username} reacted to your message.`
+            )
+        })
 
-export const insertMessage = async (
-  message,
-  sender,
-  room,
-  messReply,
-  messFwd
-) => {
-  let mess = new Message();
-  mess.message = message;
-  mess.reply_id = messReply;
-  mess.forward_id = messFwd;
-  mess.sender_id = sender;
-  mess.room_id = room;
-  await AppDataSource.manager.save(mess);
-  return mess;
-};
+        // replyMessage : {replyMessage: id, message: content}
+        socket.on(eventSocket.replyMessage, async (data) => {
+            const dataParse = JSON.parse(JSON.stringify(data))
+            const findReplyMessage = await socketServices.findMessage(
+                dataParse.replyMessage
+            )
+            if (!findReplyMessage) {
+                return socket.emit(
+                    eventSocket.error,
+                    'Message Reply does not exist'
+                )
+            }
+            await socketServices.insertMessage(
+                dataParse.message,
+                user.id,
+                roomId,
+                findReplyMessage.id
+            )
+            socket.broadcast.emit(eventSocket.replyMessage, {
+                messageReply: findReplyMessage.message,
+                message: data.message,
+                username: user.username,
+            })
+        })
 
-export const createRoomChat = async (roomName, type, groupTypes, codeGroup) => {
-  let room = new ChatRoom();
-  room.title = roomName;
-  room.type = type;
-  room.group_types = groupTypes;
-  room.code_gr = codeGroup;
-  await AppDataSource.manager.save(room);
-  return room;
-};
+        // forwardMessage {fwdMessage: id, toRoom: id}
+        socket.on(eventSocket.forwardMessage, async (data) => {
+            const dataParse = JSON.parse(JSON.stringify(data))
+            console.log(dataParse)
+            const findFwdMessage = await socketServices.findMessage(
+                dataParse.fwdMessage
+            )
+            if (!findFwdMessage) {
+                return socket.emit(eventSocket.error, 'Message does not exist')
+            }
+            const checkMember = await socketServices.findMember(
+                user.id,
+                dataParse.toRoom
+            )
+            if (!checkMember) {
+                return socket.emit(
+                    eventSocket.error,
+                    "You aren't a member of this room"
+                )
+            }
+            await socketServices.insertMessage(
+                findFwdMessage.message,
+                user.id,
+                dataParse.toRoom,
+                null,
+                findFwdMessage.id
+            )
 
-export const addMember = async (roomId, memId) => {
-  let member = new Member();
-  member.room_id = roomId;
-  member.user_id = memId;
-  await AppDataSource.manager.save(member);
-  return member;
-};
+            console.log('checkMember', checkMember)
+            socket.to(dataParse.toRoom).emit(eventSocket.forwardMessage, {
+                note: 'forward message',
+                message: findFwdMessage.message,
+                username: user.username,
+            })
+        })
+        // Notification
+        const result = await noticeMessage(roomId, user)
+        if (result) socket.emit('sent', 'sent')
 
-export const findUser = async (userId) => {
-  const user = await AppDataSource.getRepository(User).findOne({
-    where: {
-      id: userId,
-    },
-  });
-  return user;
-};
+        disconnectUser(io, socket)
+    } catch (error) {
+        return socket.emit(eventSocket.error, error.message)
+    }
+}
 
-export const findMember = async (userId, roomId) => {
-  const user = await AppDataSource.getRepository(Member).findOne({
-    where: {
-      user_id: userId,
-      room_id: roomId,
-    },
-  });
-  return user;
-};
-export const findMemberDirect = async (userId) => {
-  const user = await AppDataSource.getRepository(Member)
-    .createQueryBuilder("member")
-    .innerJoin("member.room_id", "chatroom")
-    .where("chatroom.type = :name and member.user_id = :user_id", {
-      name: "direct",
-      user_id: userId,
+export const directRoom = async (io, socket) => {
+    try {
+        const user = await socketServices.findUser(socket.handshake.headers.id)
+        const friend = await socketServices.findUser(
+            socket.handshake.query.friend
+        )
+        const friendDirectRoom = await socketServices.findMemberDirect(
+            socket.handshake.query.friend
+        )
+        const userDirectRoom = await socketServices.findMemberDirect(user.id)
+        let roomId = ''
+        const result = friendDirectRoom.map((i) =>
+            userDirectRoom.filter((j) => {
+                if (j.roomId == i.roomId) roomId = i.roomId
+            })
+        )
+        if (!result.length) {
+            const roomDirect = await socketServices.createRoomChat(
+                null,
+                'direct',
+                'private',
+                null
+            )
+            await socketServices.addMember(roomDirect.id, user.id)
+            await socketServices.addMember(roomDirect.id, friend.id)
+            socket.join(roomDirect.id)
+            socket.emit(
+                eventSocket.newMessage,
+                `Joined direct room with ${friend.username}`
+            )
+            await socketServices.updateActiveInGroup(
+                user.id,
+                roomDirect.id,
+                true
+            )
+            chatMessage(io, socket)
+        } else {
+            socket.join(roomId)
+            socket.emit(
+                eventSocket.newMessage,
+                `Joined direct room with ${friend.username}`
+            )
+            await socketServices.updateActiveInGroup(user.id, roomId, true)
+            chatMessage(io, socket, roomId)
+        }
+    } catch (error) {
+        return socket.emit(eventSocket.error, error.message)
+    }
+}
+
+export const joinRoom = async (io, socket) => {
+    const user = await socketServices.findUser(socket.handshake.headers.id)
+    if (!user) {
+        return socket.emit(eventSocket.error, 'User does not exist')
+    }
+    const roomInfo = await socketServices.findRoom(socket.handshake.query.room)
+    if (!roomInfo) {
+        return socket.emit(eventSocket.error, 'Room chat does not exist')
+    }
+    const member = await socketServices.findMember(
+        user.id,
+        socket.handshake.query.room
+    )
+    if (roomInfo.groupTypes == 'public') {
+        await socketServices.addMember(roomInfo.id, user.id)
+        socket.join(roomInfo.id)
+        socket.broadcast.emit(
+            eventSocket.newMember,
+            `Hello new my roomate ${user.username}`
+        )
+        await socketServices.updateActiveInGroup(user.id, roomInfo.id, true)
+        console.log('Active in group')
+        chatMessage(io, socket, roomInfo.id)
+    } else if (member) {
+        socket.join(roomInfo.id)
+        socket.emit(
+            eventSocket.newMessage,
+            `Hello ${user.username} room ${roomInfo.id}`
+        )
+        //Update active in group
+        await socketServices.updateActiveInGroup(user.id, roomInfo.id, true)
+        chatMessage(io, socket, roomInfo.id)
+    } else {
+        socket.emit(eventSocket.error, { message: 'Cant join this room' })
+    }
+}
+
+// if not found room by code => error: Not found, else addMember
+export const JoinByCode = async (io, socket) => {
+    const user = await socketServices.findUser(socket.handshake.headers.id)
+    if (!user) {
+        return socket.emit(eventSocket.error, 'User does not exist')
+    }
+    const codeGroup = socket.handshake.query.code_roomchat
+    const findRoom = await socketServices.checkCode(codeGroup)
+    if (findRoom) {
+        const member = await socketServices.findMember(user.id, findRoom.id)
+        if (!member) await socketServices.addMember(findRoom.id, user.id)
+        socket.join(findRoom.id)
+        socket.emit(
+            eventSocket.newMessage,
+            `Hello ${user.username} room ${findRoom.id}`
+        )
+        //Update active in group
+        await socketServices.updateActiveInGroup(user.id, findRoom.id, true)
+        chatMessage(io, socket, findRoom.id)
+    } else {
+        socket.emit(eventSocket.error, { message: 'Not found this room' })
+    }
+}
+
+// check amount member, error: at least 3 members
+export const createRoom = async (io, socket) => {
+    const user = await socketServices.findUser(socket.handshake.headers.id)
+    socket.on(eventSocket.create, async (data) => {
+        const dataParse = JSON.parse(JSON.stringify(data))
+        let countMember = 0
+        if (dataParse.friends.length < 2) {
+            return socket.emit(eventSocket.error, {
+                message: 'At least 3 members in a room',
+            })
+        }
+        let membersCantAdd = []
+        let members = []
+        await dataParse.friends.reduce(async (memberList, member) => {
+            let check = await checkPrivacyMember(
+                user.id,
+                member.friendId,
+                socket
+            )
+            console.log('check', check)
+            if (check) {
+                countMember++
+                members.push(member.friendId)
+            } else {
+                membersCantAdd.push(member.friendId)
+            }
+            return members
+        }, [])
+        console.log('countMember', membersCantAdd, members)
+        if (countMember > 1) {
+            const newRoom = await socketServices.createRoomChat(
+                dataParse.title,
+                'group',
+                'private',
+                makeid(6)
+            )
+            members.map(async (memberId) => {
+                await socketServices.addMember(newRoom.id, memberId)
+            })
+            await socketServices.addMember(newRoom.id, user.id)
+            socket.join(newRoom.id)
+            if (membersCantAdd.length) {
+                membersCantAdd.map(async (memberId) => {
+                    let member = await socketServices.findUser(memberId)
+                    socket.emit(
+                        eventSocket.error,
+                        `Cant add ${member.username} into this room`
+                    )
+                })
+            }
+            socket.emit(eventSocket.newMessage, `Welcome to new room`)
+            chatMessage(io, socket, newRoom.id)
+        } else {
+            if (membersCantAdd.length) {
+                membersCantAdd.map(async (memberId) => {
+                    let member = await socketServices.findUser(memberId)
+                    socket.emit(
+                        eventSocket.error,
+                        `Cant add ${member.username} into this room`
+                    )
+                })
+            }
+            socket.emit(eventSocket.error, `At least 3 members in a room`)
+        }
     })
-    .getMany();
+}
 
-  return user;
-};
+export const muteNotice = async (io, socket) => {
+    const user = await socketServices.findUser(socket.handshake.headers.id)
+    await socketServices.updateMute(user.id)
+}
 
-export const findMessage = async (messId) => {
-  const message = await AppDataSource.getRepository(Message).findOne({
-    where: {
-      id: messId,
-    },
-  });
-  return message;
-};
+export const disconnectUser = async (io, socket) => {
+    try {
+        const userId = socket.handshake.headers.id
+        const user = await socketServices.findUser(socket.handshake.headers.id)
+        if (!user) {
+            return socket.emit(eventSocket.error, `User does not exist`)
+        }
+        socket.on('disconnect', async () => {
+            console.log(
+                'socket.handshake.query.room',
+                socket.handshake.query.room
+            )
 
-export const findRoom = async (room) => {
-  const roomInfo = await AppDataSource.getRepository(ChatRoom).findOne({
-    where: {
-      id: room,
-    },
-  });
-  return roomInfo;
-};
+            if (socket.handshake.query.friend) {
+                let roomId = ''
+                const friendDirectRoom = await socketServices.findMemberDirect(
+                    socket.handshake.query.friend
+                )
+                const userDirectRoom = await socketServices.findMemberDirect(
+                    userId
+                )
+                friendDirectRoom.map((i) =>
+                    userDirectRoom.filter((j) => {
+                        if (j.roomId == i.roomId) roomId = i.roomId
+                    })
+                )
+                console.log('disconnect room', roomId)
+                const updateActiveInGroup =
+                    await socketServices.updateActiveInGroup(
+                        user.id,
+                        roomId,
+                        false
+                    )
+                if (!updateActiveInGroup) {
+                    return socket.emit(eventSocket.error, `Error`)
+                }
+            }
+            if (socket.handshake.query.room) {
+                console.log(
+                    'socket.handshake.query.room',
+                    socket.handshake.query.room
+                )
+                await socketServices.updateActiveInGroup(
+                    user.id,
+                    socket.handshake.query.room,
+                    false
+                )
+            }
+            await socketServices.updateActive(user.id)
+            socket.broadcast.emit(
+                'userDisconnect',
+                `${user.username} has left room chat`
+            )
+        })
+    } catch (error) {
+        return socket.emit(eventSocket.error, error.message)
+    }
+}
 
-export const checkCode = async (codeGr) => {
-  const roomcheck = await AppDataSource.getRepository(ChatRoom).findOne({
-    where: {
-      code_gr: codeGr,
-    },
-  });
-  return roomcheck;
-};
+export const noticeMessage = async (roomId, user) => {
+    try {
+        const findRoom = await socketServices.findRoom(roomId)
+        const listMember = await socketServices.getRoomUsers(roomId)
+        for (let member of listMember) {
+            if (member.userId != user.id && member.activeInGroup == false) {
+                if (findRoom.type == 'direct') {
+                    await socketServices.addNotice(
+                        member.userId,
+                        `You have a new message from ${user.username}`
+                    )
+                } else {
+                    await socketServices.addNotice(
+                        member.userId,
+                        `You have a new message from ${findRoom.title} room`
+                    )
+                }
+            }
+        }
+    } catch (error) {
+        return false
+    }
+}
 
-export const userPrivacy = async (userId) => {
-  const userPrivacy = await AppDataSource.getRepository(Setting).findOne({
-    where: {
-      user_id: userId,
-    },
-  });
-  return userPrivacy;
-};
-
-export const updateMute = async (userId) => {
-  const updateMember = await AppDataSource.getRepository(Member).findOne({
-    where: {
-      user_id: userId,
-      is_mute: true,
-    },
-  });
-  return updateMember;
-};
-
-export const updateActive = async (userId) => {
-  const updateSession = await AppDataSource.getRepository(Session).findOne({
-    where: {
-      user_id: userId,
-    },
-  });
-  const updateActive = await AppDataSource.getRepository(User).findOne({
-    where: {
-      id: userId,
-    },
-  });
-  updateActive.is_active = false;
-  updateActive.last_seen = new Date();
-  await AppDataSource.manager.save(updateActive);
-  let activeTime = new Date();
-  console.log("Date", activeTime);
-  updateSession.last_active = activeTime;
-  await AppDataSource.manager.save(updateSession);
-  return updateSession;
-};
-
-export const addNotice = async (userId, content) => {
-  const userNotice = new Notification();
-  userNotice.user_id = userId;
-  userNotice.content = content;
-  userNotice.is_read = false;
-  await AppDataSource.manager.save(userNotice);
-  return userNotice;
-};
-
-export const updateNotice = async (userId, content) => {
-  const updateNoice = await AppDataSource.getRepository(Notification).findOne({
-    where: {
-      user_id: userId,
-    },
-  });
-  updateNoice.content = content;
-  return updateNoice;
-};
-
-export const reactMessage = async (messageId, userId, reactId) => {
-  const reactMess = new ReactMessage();
-  reactMess.message_id = messageId;
-  reactMess.member_id = userId;
-  reactMess.react_id = reactId;
-  await AppDataSource.manager.save(reactMess);
-  return reactMess;
-};
-
-export const updateActiveInGroup = async (userId, roomId, status) => {
-  const activeMember = await AppDataSource.getRepository(Member).findOne({
-    where: {
-      user_id: userId,
-      room_id: roomId,
-    },
-  });
-  if (status) {
-    const updateActive = await AppDataSource.getRepository(User).findOne({
-      where: {
-        id: userId,
-      },
-    });
-    updateActive.is_active = true;
-    updateActive.last_seen = new Date();
-    await AppDataSource.manager.save(updateActive);
-  }
-  activeMember.active_in_group = status;
-  await AppDataSource.manager.save(activeMember);
-  console.log("Active in group");
-  return activeMember;
-};
+const checkPrivacyMember = async (userId, memId, socket) => {
+    try {
+        const userPrivacy = await socketServices.userPrivacy(memId)
+        const infoMember = await socketServices.findUser(memId)
+        let userFriend = await AppDataSource.getRepository(Friend).findOne({
+            where: {
+                userId: userId,
+                friendId: memId,
+            },
+        })
+        if (userPrivacy.roleAddToGroup == 'Everybody') {
+            return true
+        } else if (
+            userPrivacy.roleAddToGroup == 'My contacts' &&
+            userFriend &&
+            userFriend.status == 'friend'
+        ) {
+            return true
+        } else {
+            socket.emit(
+                eventSocket.newMessage,
+                `You cant add ${infoMember.username} into the group`
+            )
+            return false
+        }
+    } catch (error) {
+        console.log(error)
+        return false
+    }
+}
