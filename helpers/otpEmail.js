@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import bycrypt from "bcrypt";
 import { User } from "../entities/User";
 import { AppDataSource } from "@/app.js";
+import { makeid } from "@/helpers/generateKey";
 
 let transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -14,7 +15,7 @@ let transporter = nodemailer.createTransport({
 });
 
 export const sendOTPVerificationEmail = async (user) => {
-  const otp = `${Math.floor(1000 + Math.random() * 9000)}`;
+  const otp = makeid(4);
   console.log("sendOTPVerificationEmail", user.email);
   try {
     const mailOptions = {

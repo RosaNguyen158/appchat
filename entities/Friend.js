@@ -2,28 +2,24 @@ import {
   Entity,
   Column,
   BaseEntity,
-  PrimaryColumn,
   PrimaryGeneratedColumn,
-  CreateDateColumn,
-  OneToOne,
   JoinColumn,
-  OneToMany,
   ManyToOne,
 } from "typeorm";
-import { UserAccount } from "./UserAccount";
+import { User } from "./User";
 
 @Entity({ name: "friend" })
 export class Friend extends BaseEntity {
   @PrimaryGeneratedColumn()
   id = new Number();
 
-  @ManyToOne(() => UserAccount, (user_account) => user_account.friend)
+  @ManyToOne(() => User, (user) => user.id)
   @JoinColumn()
-  user_id = new UserAccount();
+  user_id = "";
 
-  @ManyToOne(() => UserAccount, (friend_account) => friend_account.friend)
+  @ManyToOne(() => User, (user) => user.id)
   @JoinColumn()
-  friend_id = new UserAccount();
+  friend_id = "";
 
   @Column("text")
   status = "";

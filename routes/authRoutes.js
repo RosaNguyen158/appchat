@@ -3,10 +3,10 @@ import * as AuthController from "@/controllers/AuthControllers";
 
 const route = express.Router();
 
-route.get("/friend", AuthController.friend);
-route.get("/register", AuthController.register);
-route.get("/enterOTP", AuthController.enterOtp);
+// route.post("/refreshToken", AuthController.RefreshToken);
+route.post("/register", AuthController.register);
 route.post("/login", AuthController.login);
 route.post("/verify", AuthController.verify);
+route.post("/logout", AuthController.logout);
 
 export default route;

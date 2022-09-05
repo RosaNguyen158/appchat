@@ -10,13 +10,9 @@ import {
 } from "typeorm";
 import { User } from "./User";
 
-@Entity({ name: "user_account" })
-export class UserAccount extends BaseEntity {
+export class UserAccount_old {
   @PrimaryGeneratedColumn()
   id = new Number();
-
-  @Column("boolean")
-  is_active = "";
 
   @Column("timestamp with time zone")
   created_at = new Date();

@@ -1,61 +1,29 @@
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv"; // de su dung cac bien trong .env
 import bycrypt from "bcrypt";
-import { body, validationResult } from "express-validator";
-import { sanitizeBody } from "express-validator";
+import { generateTokens } from "@/helpers/generateToken";
 import * as OtpEmail from "../helpers/otpEmail";
 import { AppDataSource } from "@/app.js";
 import { User } from "../entities/User";
-import { UserAccount } from "../entities/UserAccount";
-import { Friend } from "../entities/Friend";
+import { Session } from "../entities/Session";
+import geoip from "geoip-lite";
+import UAParser from "ua-parser-js";
 
 dotenv.config();
 
 export const register = async (req, res, next) => {
   const user = new User();
-  user.password = 333;
-  user.username = "Hanna";
-  user.email = "hongnguyenarmy@gmail.com";
+  user.password = req.body.password;
+  user.username = req.body.username;
+  user.email = req.body.email;
 
-  const user_account = new UserAccount();
-  user_account.is_active = true;
-  user_account.user_id = user;
-  await AppDataSource.manager.save([user_account, user]);
+  await AppDataSource.manager.save(user);
   console.log(user.id);
   res.json({ message: "Successfully Saved." });
-};
-
-export const friend = async (req, res, next) => {
-  const user = new User();
-  user.password = 333;
-  user.username = "Hanna";
-  user.email = "hongnguyenarmy@gmail.com";
-
-  const user1 = new User();
-  user.password = 333;
-  user.username = "Hanna";
-  user.email = "hongnguyenarmy@gmail.com";
-
-  const user_account = new UserAccount();
-  user_account.is_active = true;
-  user_account.user_id = user;
-
-  const friend_account = new UserAccount();
-  user_account.is_active = true;
-  user_account.user_id = user1;
-
-  const friend = new Friend();
-  friend.user_id = 3;
-  friend.friend_id = user_account;
-  await AppDataSource.manager.save(friend);
-  console.log(friend.id);
-  res.json({ message: "Successfully Saved Friend." });
 };
 
 export const login = async (req, res, next) => {
   let user_name = req.body.username;
   let pass_word = req.body.password;
-
   console.log("username ", user_name, "pass ", pass_word);
   let findUser = await AppDataSource.getRepository(User).findOne({
     where: {
@@ -64,7 +32,6 @@ export const login = async (req, res, next) => {
     },
   });
   console.log("findUser ", findUser);
-
   if (!findUser) {
     res.json("Fail");
   } else {
@@ -73,10 +40,6 @@ export const login = async (req, res, next) => {
       status: "Sending",
     });
   }
-};
-
-export const enterOtp = (req, res, next) => {
-  return res.render("verify.html");
 };
 
 export const verify = async (req, res, next) => {
@@ -94,28 +57,58 @@ export const verify = async (req, res, next) => {
     if (!otp) {
       res.json("FAIL");
     } else {
-      let hashedOTP = `${findUser.otp}`;
-      console.log("findUser.otp", findUser.otp);
+      let hashedOTP = findUser.otp;
+      console.log(hashedOTP);
       const validOTP = await bycrypt.compare(`${otp}`, hashedOTP);
       if (!validOTP) {
         res.json("FAILED VERIFY OTP");
       } else {
-        findUser.verify = "true";
-        findUser.otp = "";
-        const accessToken = jwt.sign(
-          { user_name, pass_word },
-          process.env.ACCESS_TOKEN_SECRET
+        const user_id = findUser.id;
+        await AppDataSource.manager.save(findUser);
+        const tokens = generateTokens(findUser);
+        const user_session = new Session(); // Insert new Session
+        user_session.token = tokens.accessToken;
+        user_session.refresh_token = tokens.refreshToken;
+        user_session.user_id = user_id;
+        user_session.agent_info = req.headers["user-agent"];
+        const geo = geoip.lookup("222.253.42.176");
+        user_session.location = geo.country;
+        user_session.ip_address = req.ip;
+        const agent_info = UAParser(
+          "Mozilla/5.0 (iPad; CPU OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/87.0.4280.77 Mobile/15E148 Safari/604.1"
         );
-        res.json({
+        user_session.agent_os = agent_info.os.name;
+        user_session.agent_browser = agent_info.browser.name;
+        user_session.device_name = agent_info.device.vendor;
+        await AppDataSource.manager.save(user_session);
+        console.log(JSON.stringify(device_info, null, "  "));
+        console.log("tokens", tokens);
+        return res.json({
           message: "thanh cong",
-          token: accessToken,
+          token: tokens.accessToken,
         });
       }
     }
   } catch (error) {
-    res.json({
+    console.log(error);
+    return res.json({
       status: "FAILED",
       message: error.message,
     });
   }
+};
+
+export const logout = async (req, res) => {
+  const authorizationHeader = req.headers["authorization"];
+  const token = authorizationHeader; // token
+  console.log("authorizationHeader", authorizationHeader);
+  let user_session = await AppDataSource.getRepository(Session).findOne({
+    where: {
+      token: token,
+    },
+  });
+  user_session.refresh_token = null;
+  await AppDataSource.manager.save(user_session);
+  console.log("user_session logout", user_session);
+  res.json("Success Logout");
 };
