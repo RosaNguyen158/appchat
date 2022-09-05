@@ -411,7 +411,20 @@ export const resetPassword = async (req, res) => {
         });
       }
     });
+<<<<<<< HEAD
     const userSetting = await AppDataSource.getRepository(Setting).findOne({
+=======
+  }
+};
+
+export const verify = async (req, res, next) => {
+  try {
+    let user_name = req.body.username;
+    let pass_word = req.body.password;
+    let otp = req.body.otp;
+    console.log(otp);
+    let findUser = await AppDataSource.getRepository(User).findOne({
+>>>>>>> 1f4d3ef1b82e964103c20eaa68ce240d15e52429
       where: {
         user_id: user.id,
       },
